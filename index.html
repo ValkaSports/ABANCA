@@ -1,0 +1,2825 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ABANCA · Portal de Gestión de Patrocinios</title>
+
+<!-- Tipografía corporativa Outfit -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- Librerías externas: Chart.js para gráficos, jsPDF para informes -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+/* =====================================================================
+   VARIABLES CORPORATIVAS ABANCA
+   ===================================================================== */
+:root {
+  --abanca-blue:        #5A85D7;     /* Azul corporativo principal */
+  --abanca-navy:        #1C2F6B;     /* Azul marino (cabeceras, textos fuertes) */
+  --abanca-blue-soft:   #E8F0FF;     /* Azul claro fondos */
+  --abanca-blue-50:     #F4F8FF;
+  --abanca-accent:      #FFB400;     /* Acento dorado (alertas, destacados) */
+
+  --bg:                 #F6F8FC;
+  --surface:            #FFFFFF;
+  --surface-alt:        #FBFCFE;
+  --border:             #E5EAF2;
+  --text:               #1A2238;
+  --text-muted:         #6B7388;
+  --text-soft:          #8D94A7;
+
+  --success:            #22B07D;
+  --warning:            #F0A33A;
+  --danger:             #E25555;
+  --info:               #5A85D7;
+
+  --radius-sm:          8px;
+  --radius:             14px;
+  --radius-lg:          20px;
+  --radius-xl:          26px;
+
+  --shadow-xs:          0 1px 2px rgba(28,47,107,.04);
+  --shadow-sm:          0 2px 8px rgba(28,47,107,.06);
+  --shadow:             0 6px 20px rgba(28,47,107,.08);
+  --shadow-lg:          0 14px 40px rgba(28,47,107,.12);
+
+  --transition:         all .25s cubic-bezier(.4,0,.2,1);
+}
+
+/* Modo oscuro */
+body.dark {
+  --bg:                 #0F1530;
+  --surface:            #182148;
+  --surface-alt:        #141C3D;
+  --border:             #263166;
+  --text:               #EDF1FA;
+  --text-muted:         #A8B2D1;
+  --text-soft:          #7C87AB;
+  --abanca-blue-soft:   #1F2C5C;
+  --abanca-blue-50:     #1A2450;
+  --shadow-xs:          0 1px 2px rgba(0,0,0,.3);
+  --shadow-sm:          0 2px 8px rgba(0,0,0,.35);
+  --shadow:             0 6px 20px rgba(0,0,0,.4);
+  --shadow-lg:          0 14px 40px rgba(0,0,0,.5);
+}
+
+/* =====================================================================
+   RESET Y BASE
+   ===================================================================== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+  transition: background .3s ease, color .3s ease;
+}
+
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+input, select, textarea { font-family: inherit; }
+a { color: inherit; text-decoration: none; }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--abanca-blue); }
+
+/* =====================================================================
+   LAYOUT PRINCIPAL: SIDEBAR + MAIN
+   ===================================================================== */
+.app {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
+}
+
+/* ---------- SIDEBAR ---------- */
+.sidebar {
+  background: linear-gradient(180deg, var(--abanca-navy) 0%, #14224F 100%);
+  color: #fff;
+  padding: 24px 18px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 30;
+}
+
+.sidebar .brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px 18px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  margin-bottom: 16px;
+}
+.sidebar .brand .logo {
+  width: 42px; height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--abanca-blue), #7AA0E8);
+  display: grid; place-items: center;
+  font-weight: 800; font-size: 18px; color: #fff;
+  box-shadow: 0 6px 14px rgba(90,133,215,.45);
+}
+.sidebar .brand h1 {
+  font-size: 17px; font-weight: 700; letter-spacing: .3px;
+}
+.sidebar .brand small {
+  color: rgba(255,255,255,.55); font-size: 11px; font-weight: 500;
+  letter-spacing: 1.2px; text-transform: uppercase;
+}
+
+.sidebar .nav-section {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  color: rgba(255,255,255,.4);
+  padding: 14px 12px 6px;
+  font-weight: 600;
+}
+
+.sidebar .nav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  color: rgba(255,255,255,.78);
+  font-size: 14px; font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+}
+.sidebar .nav-item:hover { background: rgba(255,255,255,.06); color: #fff; }
+.sidebar .nav-item.active {
+  background: linear-gradient(90deg, var(--abanca-blue) 0%, rgba(90,133,215,.6) 100%);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(90,133,215,.35);
+}
+.sidebar .nav-item .icon {
+  width: 20px; height: 20px; flex-shrink: 0;
+  display: grid; place-items: center;
+}
+.sidebar .nav-item .badge {
+  margin-left: auto;
+  background: var(--abanca-accent);
+  color: var(--abanca-navy);
+  font-size: 11px; font-weight: 700;
+  padding: 2px 7px; border-radius: 999px;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255,255,255,.08);
+  font-size: 12px;
+  color: rgba(255,255,255,.5);
+  display: flex; flex-direction: column; gap: 6px;
+}
+
+/* ---------- MAIN ---------- */
+.main { display: flex; flex-direction: column; min-width: 0; }
+
+/* ---------- TOPBAR ---------- */
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 30px;
+  display: flex; align-items: center; gap: 18px;
+  position: sticky; top: 0; z-index: 20;
+  box-shadow: var(--shadow-xs);
+}
+.topbar .search {
+  flex: 1;
+  max-width: 480px;
+  position: relative;
+}
+.topbar .search input {
+  width: 100%;
+  padding: 10px 14px 10px 40px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-alt);
+  color: var(--text);
+  font-size: 14px;
+  transition: var(--transition);
+}
+.topbar .search input:focus {
+  outline: none;
+  border-color: var(--abanca-blue);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px rgba(90,133,215,.15);
+}
+.topbar .search::before {
+  content: ''; position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  width: 16px; height: 16px;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%236B7388' stroke-width='2' viewBox='0 0 24 24'><circle cx='11' cy='11' r='7'/><path d='m21 21-4.3-4.3'/></svg>") no-repeat center / contain;
+}
+.topbar .actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.icon-btn {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  display: grid; place-items: center;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  transition: var(--transition);
+  position: relative;
+}
+.icon-btn:hover { background: var(--abanca-blue-soft); color: var(--abanca-navy); }
+.icon-btn .dot {
+  position: absolute; top: 8px; right: 9px;
+  width: 8px; height: 8px;
+  background: var(--danger);
+  border-radius: 50%;
+  border: 2px solid var(--surface);
+}
+.user-chip {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 14px 6px 6px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 13px; font-weight: 500;
+}
+.user-chip .avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--abanca-blue), var(--abanca-navy));
+  color: #fff;
+  display: grid; place-items: center;
+  font-size: 12px; font-weight: 700;
+}
+
+/* ---------- SECCIONES ---------- */
+.content {
+  padding: 28px 30px 60px;
+  max-width: 1500px;
+  width: 100%;
+}
+.section { display: none; animation: fadeIn .35s ease; }
+.section.active { display: block; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.section-header {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  flex-wrap: wrap; gap: 16px;
+  margin-bottom: 22px;
+}
+.section-header h2 {
+  font-size: 26px; font-weight: 700; color: var(--abanca-navy);
+  letter-spacing: -.5px;
+}
+.section-header p {
+  color: var(--text-muted); font-size: 14px; margin-top: 4px;
+}
+body.dark .section-header h2 { color: var(--abanca-blue); }
+
+/* ---------- BOTONES ---------- */
+.btn {
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-size: 13px; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--abanca-blue), #4774C7);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(90,133,215,.35);
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(90,133,215,.45); }
+.btn-secondary {
+  background: var(--surface);
+  color: var(--abanca-navy);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover { background: var(--abanca-blue-soft); border-color: var(--abanca-blue); }
+.btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+}
+.btn-ghost:hover { background: var(--surface-alt); color: var(--abanca-navy); }
+.btn-danger {
+  background: rgba(226,85,85,.1);
+  color: var(--danger);
+}
+.btn-danger:hover { background: rgba(226,85,85,.18); }
+
+/* ---------- KPIs ---------- */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+  margin-bottom: 24px;
+}
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  position: relative;
+  overflow: hidden;
+  transition: var(--transition);
+}
+.kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.kpi-card::after {
+  content: ''; position: absolute; top: 0; right: 0;
+  width: 90px; height: 90px;
+  background: radial-gradient(circle at center, rgba(90,133,215,.18), transparent 70%);
+  border-radius: 50%;
+  transform: translate(30%, -30%);
+}
+.kpi-card .label {
+  font-size: 12px; font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+  display: flex; align-items: center; gap: 8px;
+}
+.kpi-card .label .ic {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: var(--abanca-blue-soft);
+  color: var(--abanca-navy);
+  display: grid; place-items: center;
+}
+.kpi-card .value {
+  font-size: 30px; font-weight: 800;
+  color: var(--abanca-navy);
+  letter-spacing: -1px;
+  line-height: 1.1;
+}
+body.dark .kpi-card .value { color: var(--abanca-blue); }
+.kpi-card .delta {
+  font-size: 12px; font-weight: 600;
+  margin-top: 6px;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+.kpi-card .delta.up   { color: var(--success); background: rgba(34,176,125,.12); }
+.kpi-card .delta.down { color: var(--danger);  background: rgba(226,85,85,.12); }
+.kpi-card .delta.neutral { color: var(--text-muted); background: var(--surface-alt); }
+
+/* ---------- CARDS GENÉRICOS ---------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  box-shadow: var(--shadow-xs);
+}
+.card h3 {
+  font-size: 16px; font-weight: 700;
+  color: var(--abanca-navy);
+  margin-bottom: 6px;
+  display: flex; align-items: center; gap: 10px;
+}
+body.dark .card h3 { color: var(--abanca-blue); }
+.card .subtitle {
+  font-size: 13px; color: var(--text-muted);
+  margin-bottom: 18px;
+}
+
+/* ---------- DASHBOARD GRID ---------- */
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 22px;
+  margin-bottom: 24px;
+}
+.dash-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+  margin-bottom: 24px;
+}
+.dash-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 22px;
+  margin-bottom: 24px;
+}
+@media (max-width: 1100px) {
+  .dash-grid, .dash-grid-2, .dash-grid-3 { grid-template-columns: 1fr; }
+}
+
+/* ---------- MAPA SVG IBERIA ---------- */
+.map-card { padding: 22px; }
+.map-wrap {
+  position: relative;
+  background: linear-gradient(180deg, var(--abanca-blue-50), var(--surface));
+  border-radius: var(--radius);
+  padding: 14px;
+  overflow: hidden;
+}
+.map-wrap svg { width: 100%; height: auto; max-height: 380px; }
+.map-region {
+  fill: var(--abanca-blue-soft);
+  stroke: var(--abanca-blue);
+  stroke-width: 1.5;
+  transition: fill .3s;
+}
+body.dark .map-region { fill: rgba(90,133,215,.15); }
+.map-pin {
+  cursor: pointer;
+  transition: var(--transition);
+}
+.map-pin circle { transition: var(--transition); }
+.map-pin:hover circle.pin-outer { r: 14; opacity: .35; }
+.map-pin:hover circle.pin-inner { r: 7; }
+.map-pin text {
+  fill: var(--abanca-navy); font-size: 11px; font-weight: 600;
+  pointer-events: none;
+  font-family: 'Outfit', sans-serif;
+}
+body.dark .map-pin text { fill: #fff; }
+
+.city-info {
+  position: absolute;
+  bottom: 16px; right: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  min-width: 220px;
+  max-width: 300px;
+  box-shadow: var(--shadow);
+  font-size: 13px;
+  display: none;
+}
+.city-info.show { display: block; animation: fadeIn .25s ease; }
+.city-info h4 {
+  font-size: 14px; font-weight: 700; color: var(--abanca-navy);
+  margin-bottom: 6px; display: flex; align-items: center; gap: 6px;
+}
+body.dark .city-info h4 { color: var(--abanca-blue); }
+.city-info ul { list-style: none; }
+.city-info li {
+  padding: 4px 0;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  border-bottom: 1px dashed var(--border);
+}
+.city-info li:last-child { border: none; }
+
+/* ---------- ALERTAS ---------- */
+.alerts-list { display: flex; flex-direction: column; gap: 10px; }
+.alert-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--surface-alt);
+  border-left: 4px solid var(--warning);
+  font-size: 13px;
+  transition: var(--transition);
+  cursor: pointer;
+}
+.alert-item:hover { transform: translateX(2px); box-shadow: var(--shadow-sm); }
+.alert-item.danger { border-left-color: var(--danger); }
+.alert-item.info { border-left-color: var(--abanca-blue); }
+.alert-item.success { border-left-color: var(--success); }
+.alert-item .ic-circle {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: rgba(240,163,58,.15);
+  color: var(--warning);
+  display: grid; place-items: center;
+  flex-shrink: 0;
+}
+.alert-item.danger .ic-circle { background: rgba(226,85,85,.15); color: var(--danger); }
+.alert-item.info .ic-circle { background: rgba(90,133,215,.15); color: var(--abanca-blue); }
+.alert-item.success .ic-circle { background: rgba(34,176,125,.15); color: var(--success); }
+.alert-item .body strong { display: block; color: var(--text); font-weight: 600; margin-bottom: 2px; }
+.alert-item .body span { color: var(--text-muted); font-size: 12px; }
+.alert-item time { margin-left: auto; font-size: 11px; color: var(--text-soft); white-space: nowrap; }
+
+/* ---------- DEPORTE BASE ---------- */
+.base-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.base-stat {
+  text-align: center;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--abanca-blue-50), var(--surface));
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+.base-stat .num {
+  font-size: 26px; font-weight: 800;
+  color: var(--abanca-navy);
+  letter-spacing: -.5px;
+}
+body.dark .base-stat .num { color: var(--abanca-blue); }
+.base-stat .lbl {
+  font-size: 11px; font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 2px;
+}
+@media (max-width: 700px) { .base-grid { grid-template-columns: 1fr 1fr; } }
+
+/* ---------- FILTROS ---------- */
+.filters {
+  display: flex; gap: 12px; flex-wrap: wrap;
+  margin-bottom: 22px;
+  background: var(--surface);
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+}
+.filters input, .filters select {
+  padding: 9px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-alt);
+  color: var(--text);
+  font-size: 13px;
+  min-width: 180px;
+}
+.filters input:focus, .filters select:focus {
+  outline: none;
+  border-color: var(--abanca-blue);
+  box-shadow: 0 0 0 3px rgba(90,133,215,.15);
+}
+
+/* ---------- GRID PATROCINIOS ---------- */
+.spons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 18px;
+}
+.spons-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+.spons-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: var(--abanca-blue); }
+.spons-card .top {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 12px;
+}
+.spons-card .ent-icon {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--abanca-blue), var(--abanca-navy));
+  color: #fff;
+  display: grid; place-items: center;
+  font-weight: 800; font-size: 14px;
+  flex-shrink: 0;
+}
+.spons-card h4 {
+  font-size: 15px; font-weight: 700;
+  color: var(--abanca-navy);
+  margin-bottom: 4px;
+  line-height: 1.2;
+}
+body.dark .spons-card h4 { color: var(--abanca-blue); }
+.spons-card .cat {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+.badge {
+  font-size: 10.5px; font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  white-space: nowrap;
+}
+.badge-active   { background: rgba(34,176,125,.12); color: var(--success); }
+.badge-review   { background: rgba(240,163,58,.12); color: var(--warning); }
+.badge-risk     { background: rgba(226,85,85,.12); color: var(--danger); }
+.badge-renewal  { background: rgba(90,133,215,.12); color: var(--abanca-blue); }
+
+.spons-card .stats {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  margin: 12px 0;
+}
+.spons-card .stats div span {
+  display: block;
+  font-size: 11px; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .8px;
+  font-weight: 600;
+}
+.spons-card .stats div b {
+  display: block;
+  font-size: 14px; color: var(--text);
+  font-weight: 700;
+  margin-top: 2px;
+}
+.spons-card .progress {
+  height: 6px;
+  background: var(--abanca-blue-soft);
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 10px 0 6px;
+}
+.spons-card .progress > div {
+  height: 100%;
+  background: linear-gradient(90deg, var(--abanca-blue), var(--abanca-navy));
+  border-radius: 6px;
+  transition: width .8s ease;
+}
+.spons-card .progress-label {
+  font-size: 11px; color: var(--text-muted);
+  display: flex; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.spons-card .actions {
+  display: flex; gap: 8px;
+}
+.spons-card .actions .btn { flex: 1; justify-content: center; padding: 8px; font-size: 12.5px; }
+
+/* ---------- TABLA ---------- */
+.table-wrap { overflow-x: auto; border-radius: var(--radius-lg); border: 1px solid var(--border); background: var(--surface); }
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th, td { padding: 13px 16px; text-align: left; }
+th {
+  background: var(--surface-alt);
+  font-weight: 600; font-size: 11.5px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: var(--transition);
+}
+tbody tr:hover { background: var(--abanca-blue-50); }
+tbody tr:last-child { border-bottom: none; }
+td b { color: var(--abanca-navy); font-weight: 600; }
+body.dark td b { color: var(--abanca-blue); }
+
+/* ---------- ACTIVACIONES (timeline) ---------- */
+.timeline { position: relative; padding-left: 24px; }
+.timeline::before {
+  content: ''; position: absolute; left: 8px; top: 6px; bottom: 6px;
+  width: 2px; background: var(--border);
+}
+.timeline-item {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  margin-bottom: 14px;
+  transition: var(--transition);
+}
+.timeline-item:hover { box-shadow: var(--shadow-sm); transform: translateX(2px); }
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -23px; top: 18px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--abanca-blue);
+  border: 3px solid var(--surface);
+  box-shadow: 0 0 0 2px var(--abanca-blue);
+}
+.timeline-item.completed::before { background: var(--success); box-shadow: 0 0 0 2px var(--success); }
+.timeline-item.pending::before { background: var(--text-soft); box-shadow: 0 0 0 2px var(--text-soft); }
+.timeline-item.in-progress::before { background: var(--warning); box-shadow: 0 0 0 2px var(--warning); }
+
+.timeline-item .ti-head { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 4px; flex-wrap: wrap; }
+.timeline-item h5 { font-size: 14px; color: var(--text); font-weight: 700; }
+.timeline-item .ti-date { font-size: 12px; color: var(--text-muted); }
+.timeline-item p { font-size: 13px; color: var(--text-muted); margin: 4px 0 8px; }
+.timeline-item .ti-bar {
+  height: 6px; background: var(--abanca-blue-soft); border-radius: 6px; overflow: hidden;
+}
+.timeline-item .ti-bar > div {
+  height: 100%; background: linear-gradient(90deg, var(--abanca-blue), var(--abanca-navy));
+}
+
+/* ---------- NOTICIAS ---------- */
+.news-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 18px; }
+.news-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: var(--transition);
+  display: flex; flex-direction: column;
+}
+.news-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+.news-card .img {
+  height: 130px;
+  background: linear-gradient(135deg, var(--abanca-blue), var(--abanca-navy));
+  display: grid; place-items: center;
+  color: rgba(255,255,255,.85);
+  font-size: 36px;
+  position: relative;
+}
+.news-card .img::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.2), transparent 60%);
+}
+.news-card .body { padding: 16px; flex: 1; }
+.news-card .body small {
+  font-size: 11px; color: var(--abanca-blue);
+  font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+}
+.news-card .body h4 { font-size: 15px; font-weight: 700; color: var(--text); margin: 6px 0; line-height: 1.3; }
+.news-card .body p { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+.news-card .body time { font-size: 11px; color: var(--text-soft); margin-top: 10px; display: block; }
+
+/* ---------- CONTACTOS ---------- */
+.contact-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.contact-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  text-align: center;
+  transition: var(--transition);
+}
+.contact-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.contact-card .avatar-lg {
+  width: 70px; height: 70px;
+  margin: 0 auto 12px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--abanca-blue), var(--abanca-navy));
+  color: #fff;
+  display: grid; place-items: center;
+  font-size: 22px; font-weight: 800;
+}
+.contact-card h4 { font-size: 16px; color: var(--text); font-weight: 700; }
+.contact-card .role { font-size: 12px; color: var(--text-muted); margin: 4px 0 14px; }
+.contact-card a {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; color: var(--abanca-blue); font-weight: 600;
+}
+.contact-card a:hover { text-decoration: underline; }
+
+/* ---------- TICKETS ---------- */
+.tickets-wrap { display: grid; grid-template-columns: 1.4fr 1fr; gap: 22px; }
+@media (max-width: 1000px) { .tickets-wrap { grid-template-columns: 1fr; } }
+
+.ticket-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--abanca-blue);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.ticket-item:hover { transform: translateX(2px); box-shadow: var(--shadow-sm); }
+.ticket-item.priority-high { border-left-color: var(--danger); }
+.ticket-item.priority-mid { border-left-color: var(--warning); }
+.ticket-item.priority-low { border-left-color: var(--success); }
+.ticket-item .head { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.ticket-item h5 { font-size: 14px; color: var(--text); font-weight: 700; }
+.ticket-item p { font-size: 12.5px; color: var(--text-muted); margin: 4px 0; }
+.ticket-item .meta { display: flex; gap: 10px; font-size: 11px; color: var(--text-soft); margin-top: 6px; }
+
+.form-group { margin-bottom: 14px; }
+.form-group label {
+  display: block;
+  font-size: 12px; font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-alt);
+  color: var(--text);
+  font-size: 14px;
+  transition: var(--transition);
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  outline: none;
+  border-color: var(--abanca-blue);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px rgba(90,133,215,.15);
+}
+.form-group textarea { min-height: 110px; resize: vertical; }
+
+/* ---------- KANBAN ---------- */
+.kanban {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+@media (max-width: 1100px) { .kanban { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .kanban { grid-template-columns: 1fr; } }
+.kanban-col {
+  background: var(--surface-alt);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  min-height: 460px;
+  display: flex; flex-direction: column;
+  transition: var(--transition);
+}
+.kanban-col.drag-over {
+  background: var(--abanca-blue-soft);
+  border-color: var(--abanca-blue);
+}
+.kanban-col h4 {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--text);
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.kanban-col h4 .count {
+  background: var(--abanca-blue-soft);
+  color: var(--abanca-navy);
+  font-size: 11px; padding: 2px 7px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+.kanban-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  border-left: 3px solid var(--abanca-blue);
+  cursor: grab;
+  transition: var(--transition);
+  box-shadow: var(--shadow-xs);
+}
+.kanban-card:active { cursor: grabbing; }
+.kanban-card.dragging { opacity: .4; transform: rotate(1deg); }
+.kanban-card:hover { box-shadow: var(--shadow-sm); transform: translateY(-1px); }
+.kanban-card h6 { font-size: 13.5px; color: var(--text); font-weight: 700; margin-bottom: 4px; }
+.kanban-card p { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; line-height: 1.4; }
+.kanban-card .tag {
+  display: inline-block;
+  font-size: 10px; font-weight: 700;
+  padding: 2px 6px;
+  background: var(--abanca-blue-soft);
+  color: var(--abanca-navy);
+  border-radius: 4px;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+}
+
+/* ---------- MODAL ---------- */
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(28,47,107,.5);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center; justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+.modal-backdrop.show { display: flex; animation: fadeIn .2s ease; }
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  width: 100%;
+  max-width: 720px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  box-shadow: var(--shadow-lg);
+  animation: scaleIn .25s ease;
+}
+@keyframes scaleIn {
+  from { transform: scale(.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.modal-head {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 10px;
+}
+.modal-head h3 {
+  font-size: 18px; font-weight: 700;
+  color: var(--abanca-navy);
+}
+body.dark .modal-head h3 { color: var(--abanca-blue); }
+.modal-tabs {
+  display: flex; gap: 4px; padding: 12px 24px 0;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.modal-tab {
+  padding: 10px 14px;
+  font-size: 13px; font-weight: 600;
+  color: var(--text-muted);
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  transition: var(--transition);
+}
+.modal-tab:hover { color: var(--abanca-navy); }
+.modal-tab.active { color: var(--abanca-blue); border-bottom-color: var(--abanca-blue); }
+.modal-body { padding: 22px 24px; overflow-y: auto; flex: 1; }
+.modal-tab-content { display: none; }
+.modal-tab-content.active { display: block; animation: fadeIn .25s; }
+
+.detail-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  margin-bottom: 16px;
+}
+.detail-grid > div {
+  background: var(--surface-alt);
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+.detail-grid > div span {
+  display: block;
+  font-size: 11px; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 1px; font-weight: 600;
+  margin-bottom: 4px;
+}
+.detail-grid > div b {
+  font-size: 14.5px; color: var(--text); font-weight: 700;
+}
+.clause {
+  padding: 12px 14px;
+  border-left: 3px solid var(--abanca-blue);
+  background: var(--surface-alt);
+  border-radius: 8px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: var(--text);
+}
+.clause strong { color: var(--abanca-navy); display: block; margin-bottom: 4px; }
+body.dark .clause strong { color: var(--abanca-blue); }
+
+/* ---------- NOTIFICACIONES TOAST ---------- */
+.toast-container {
+  position: fixed;
+  top: 80px; right: 24px;
+  z-index: 200;
+  display: flex; flex-direction: column; gap: 10px;
+  pointer-events: none;
+}
+.toast {
+  background: var(--surface);
+  border-left: 4px solid var(--abanca-blue);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  min-width: 280px;
+  max-width: 360px;
+  box-shadow: var(--shadow);
+  animation: slideIn .35s ease;
+  pointer-events: auto;
+  display: flex; gap: 12px; align-items: flex-start;
+}
+@keyframes slideIn {
+  from { transform: translateX(120%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.toast.success { border-left-color: var(--success); }
+.toast.warning { border-left-color: var(--warning); }
+.toast.danger { border-left-color: var(--danger); }
+.toast .ic {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  background: var(--abanca-blue-soft);
+  color: var(--abanca-blue);
+  display: grid; place-items: center; flex-shrink: 0;
+}
+.toast.success .ic { background: rgba(34,176,125,.15); color: var(--success); }
+.toast.warning .ic { background: rgba(240,163,58,.15); color: var(--warning); }
+.toast.danger .ic { background: rgba(226,85,85,.15); color: var(--danger); }
+.toast .body strong { display: block; font-size: 13.5px; color: var(--text); margin-bottom: 2px; }
+.toast .body span { font-size: 12.5px; color: var(--text-muted); }
+
+/* ---------- CHATBOX ---------- */
+.chatbox-toggle {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  width: 58px; height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--abanca-blue), var(--abanca-navy));
+  color: #fff;
+  display: grid; place-items: center;
+  box-shadow: 0 8px 24px rgba(90,133,215,.4);
+  z-index: 90;
+  transition: var(--transition);
+}
+.chatbox-toggle:hover { transform: scale(1.06); }
+.chatbox-toggle .pulse {
+  position: absolute; inset: -3px;
+  border-radius: 50%;
+  border: 2px solid var(--abanca-blue);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0% { transform: scale(.9); opacity: 1; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+.chatbox {
+  position: fixed;
+  bottom: 100px; right: 24px;
+  width: 350px;
+  max-width: calc(100vw - 48px);
+  height: 480px;
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border);
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 95;
+}
+.chatbox.show { display: flex; animation: slideUp .3s ease; }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.chatbox-head {
+  background: linear-gradient(135deg, var(--abanca-blue), var(--abanca-navy));
+  color: #fff;
+  padding: 16px 18px;
+  display: flex; align-items: center; gap: 12px;
+}
+.chatbox-head .ic-bot {
+  width: 38px; height: 38px;
+  background: rgba(255,255,255,.18);
+  border-radius: 10px;
+  display: grid; place-items: center;
+  font-size: 18px;
+}
+.chatbox-head h5 { font-size: 14px; font-weight: 700; }
+.chatbox-head small { font-size: 11px; color: rgba(255,255,255,.75); }
+.chatbox-head .close-x { margin-left: auto; cursor: pointer; opacity: .7; }
+.chatbox-head .close-x:hover { opacity: 1; }
+
+.chat-messages { flex: 1; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+.chat-msg { max-width: 80%; padding: 10px 14px; border-radius: 14px; font-size: 13px; line-height: 1.4; }
+.chat-msg.bot {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  color: var(--text);
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+}
+.chat-msg.user {
+  background: linear-gradient(135deg, var(--abanca-blue), var(--abanca-navy));
+  color: #fff;
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+}
+.chat-suggestions {
+  padding: 8px 14px 0;
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.chat-suggestion {
+  padding: 6px 10px;
+  font-size: 11.5px;
+  background: var(--abanca-blue-soft);
+  color: var(--abanca-navy);
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: var(--transition);
+}
+.chat-suggestion:hover { background: var(--abanca-blue); color: #fff; }
+
+.chat-input {
+  padding: 12px;
+  border-top: 1px solid var(--border);
+  display: flex; gap: 8px;
+}
+.chat-input input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-alt);
+  font-size: 13px;
+}
+.chat-input input:focus { outline: none; border-color: var(--abanca-blue); }
+.chat-input button {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: var(--abanca-blue);
+  color: #fff;
+  display: grid; place-items: center;
+}
+
+/* ---------- TOUR GUIADO ---------- */
+.tour-overlay {
+  position: fixed; inset: 0;
+  background: rgba(28,47,107,.7);
+  backdrop-filter: blur(2px);
+  z-index: 150;
+  display: none;
+  align-items: center; justify-content: center;
+}
+.tour-overlay.show { display: flex; animation: fadeIn .3s ease; }
+.tour-card {
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  padding: 28px;
+  max-width: 460px;
+  width: 90%;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+}
+.tour-card .step-icon {
+  width: 64px; height: 64px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--abanca-blue), var(--abanca-navy));
+  color: #fff;
+  display: grid; place-items: center;
+  font-size: 26px;
+}
+.tour-card h3 {
+  font-size: 19px; font-weight: 700;
+  color: var(--abanca-navy); margin-bottom: 8px;
+}
+body.dark .tour-card h3 { color: var(--abanca-blue); }
+.tour-card p { color: var(--text-muted); font-size: 14px; margin-bottom: 18px; line-height: 1.6; }
+.tour-progress { display: flex; justify-content: center; gap: 6px; margin-bottom: 18px; }
+.tour-progress span {
+  width: 24px; height: 4px;
+  background: var(--border);
+  border-radius: 4px;
+  transition: var(--transition);
+}
+.tour-progress span.active { background: var(--abanca-blue); width: 36px; }
+.tour-actions { display: flex; gap: 10px; justify-content: center; }
+
+/* ---------- RESPONSIVE ---------- */
+.menu-toggle { display: none; }
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar {
+    position: fixed;
+    left: -280px; top: 0;
+    width: 260px;
+    transition: left .3s ease;
+  }
+  .sidebar.open { left: 0; }
+  .menu-toggle { display: grid; }
+  .topbar { padding: 12px 16px; }
+  .content { padding: 18px 16px 60px; }
+}
+
+/* Utilidades */
+.text-success { color: var(--success); }
+.text-warning { color: var(--warning); }
+.text-danger { color: var(--danger); }
+.text-muted { color: var(--text-muted); }
+.flex { display: flex; }
+.gap-10 { gap: 10px; }
+.mb-12 { margin-bottom: 12px; }
+.mt-12 { margin-top: 12px; }
+
+/* Loaders */
+.spinner {
+  width: 18px; height: 18px;
+  border: 3px solid rgba(255,255,255,.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+</style>
+</head>
+<body>
+
+<!-- =====================================================================
+     ESTRUCTURA: SIDEBAR + MAIN
+     ===================================================================== -->
+<div class="app">
+
+  <!-- ---------- SIDEBAR ---------- -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="logo">A</div>
+      <div>
+        <h1>ABANCA</h1>
+        <small>Patrocinios</small>
+      </div>
+    </div>
+
+    <div class="nav-section">Visión global</div>
+    <div class="nav-item active" data-section="dashboard">
+      <span class="icon">📊</span> Dashboard
+    </div>
+    <div class="nav-item" data-section="patrocinios">
+      <span class="icon">🤝</span> Patrocinios <span class="badge">24</span>
+    </div>
+    <div class="nav-item" data-section="contratos">
+      <span class="icon">📄</span> Contratos
+    </div>
+    <div class="nav-item" data-section="activaciones">
+      <span class="icon">⚡</span> Activaciones
+    </div>
+    <div class="nav-item" data-section="roi">
+      <span class="icon">📈</span> ROI &amp; Métricas
+    </div>
+
+    <div class="nav-section">Comunicación</div>
+    <div class="nav-item" data-section="noticias">
+      <span class="icon">📰</span> Noticias
+    </div>
+    <div class="nav-item" data-section="contacto">
+      <span class="icon">👥</span> Contacto
+    </div>
+
+    <div class="nav-section">Operaciones</div>
+    <div class="nav-item" data-section="tickets">
+      <span class="icon">🎟️</span> Tickets <span class="badge">3</span>
+    </div>
+    <div class="nav-item" data-section="kanban">
+      <span class="icon">🗂️</span> Contenidos
+    </div>
+
+    <div class="sidebar-footer">
+      <span>v2.4.0 · Demo</span>
+      <span>© 2026 ABANCA Corporación Bancaria</span>
+    </div>
+  </aside>
+
+  <!-- ---------- MAIN ---------- -->
+  <div class="main">
+
+    <!-- ===== TOPBAR ===== -->
+    <div class="topbar">
+      <button class="icon-btn menu-toggle" id="menuToggle" title="Menú">☰</button>
+      <div class="search">
+        <input type="text" placeholder="Buscar entidad, contrato, evento..." id="globalSearch" />
+      </div>
+      <div class="actions">
+        <button class="icon-btn" id="aiReportBtn" title="Generar Informe IA"
+                style="background:linear-gradient(135deg,var(--abanca-blue),var(--abanca-navy));color:#fff;border:none;width:auto;padding:0 16px;font-weight:600;font-size:13px;gap:8px;display:flex;align-items:center;">
+          ✨ Informe IA
+        </button>
+        <button class="icon-btn" id="darkToggle" title="Modo oscuro">🌙</button>
+        <button class="icon-btn" id="notifBtn" title="Notificaciones">
+          🔔 <span class="dot"></span>
+        </button>
+        <div class="user-chip">
+          <span class="avatar">MC</span>
+          <span>María Castro</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CONTENIDO ===== -->
+    <div class="content">
+
+      <!-- ====================================================
+           SECCIÓN: DASHBOARD
+           ==================================================== -->
+      <section class="section active" id="dashboard">
+        <div class="section-header">
+          <div>
+            <h2>Visión global de patrocinios</h2>
+            <p>Resumen ejecutivo · Actualizado hace 8 minutos</p>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button class="btn btn-secondary">📥 Exportar</button>
+            <button class="btn btn-primary" onclick="showSection('patrocinios')">Ver patrocinios</button>
+          </div>
+        </div>
+
+        <!-- KPIs principales -->
+        <div class="kpi-grid">
+          <div class="kpi-card" data-tour="kpi">
+            <div class="label"><span class="ic">🏆</span> Patrocinios activos</div>
+            <div class="value">24</div>
+            <span class="delta up">▲ 2 vs Q3</span>
+          </div>
+          <div class="kpi-card">
+            <div class="label"><span class="ic">💶</span> Inversión total</div>
+            <div class="value">8,4M€</div>
+            <span class="delta up">▲ 6,2%</span>
+          </div>
+          <div class="kpi-card">
+            <div class="label"><span class="ic">✅</span> Cumplimiento</div>
+            <div class="value">78%</div>
+            <span class="delta neutral">= objetivo 80%</span>
+          </div>
+          <div class="kpi-card">
+            <div class="label"><span class="ic">⚠️</span> Alertas activas</div>
+            <div class="value">4</div>
+            <span class="delta down">▲ 1 esta semana</span>
+          </div>
+        </div>
+
+        <!-- Mapa Iberia + Alertas -->
+        <div class="dash-grid">
+          <div class="card map-card" data-tour="map">
+            <h3>🗺️ Mapa de presencia · Península Ibérica</h3>
+            <p class="subtitle">Pulsa una ciudad para ver entidades patrocinadas</p>
+            <div class="map-wrap">
+              <!-- Mapa SVG estilizado de la Península Ibérica -->
+              <svg viewBox="0 0 600 480" xmlns="http://www.w3.org/2000/svg">
+                <!-- España -->
+                <path class="map-region" d="M 90,90 L 130,75 L 175,72 L 220,80 L 270,75 L 330,80 L 390,90 L 450,110 L 500,135 L 525,180 L 530,220 L 510,265 L 470,300 L 420,330 L 360,355 L 290,365 L 230,355 L 175,335 L 140,305 L 115,270 L 100,230 L 110,200 L 115,170 L 105,140 L 90,110 Z"/>
+                <!-- Portugal -->
+                <path class="map-region" d="M 90,110 L 105,140 L 100,180 L 95,220 L 90,260 L 85,310 L 105,330 L 130,335 L 130,290 L 135,240 L 140,190 L 138,150 L 130,120 L 115,100 Z"/>
+                <!-- Mallorca -->
+                <ellipse class="map-region" cx="500" cy="250" rx="22" ry="14"/>
+
+                <!-- PINS de ciudades -->
+                <g class="map-pin" data-city="A Coruña" transform="translate(125,103)">
+                  <circle class="pin-outer" r="10" fill="#5A85D7" opacity=".25"/>
+                  <circle class="pin-inner" r="5" fill="#1C2F6B"/>
+                  <text x="9" y="3">A Coruña</text>
+                </g>
+                <g class="map-pin" data-city="Santiago" transform="translate(125,135)">
+                  <circle class="pin-outer" r="10" fill="#5A85D7" opacity=".25"/>
+                  <circle class="pin-inner" r="5" fill="#1C2F6B"/>
+                  <text x="9" y="3">Santiago</text>
+                </g>
+                <g class="map-pin" data-city="Lugo" transform="translate(165,113)">
+                  <circle class="pin-outer" r="10" fill="#5A85D7" opacity=".25"/>
+                  <circle class="pin-inner" r="5" fill="#1C2F6B"/>
+                  <text x="9" y="3">Lugo</text>
+                </g>
+                <g class="map-pin" data-city="Vigo" transform="translate(125,165)">
+                  <circle class="pin-outer" r="10" fill="#5A85D7" opacity=".25"/>
+                  <circle class="pin-inner" r="5" fill="#1C2F6B"/>
+                  <text x="9" y="3">Vigo</text>
+                </g>
+                <g class="map-pin" data-city="Ourense" transform="translate(160,170)">
+                  <circle class="pin-outer" r="10" fill="#5A85D7" opacity=".25"/>
+                  <circle class="pin-inner" r="5" fill="#1C2F6B"/>
+                  <text x="9" y="3">Ourense</text>
+                </g>
+                <g class="map-pin" data-city="León" transform="translate(225,135)">
+                  <circle class="pin-outer" r="10" fill="#5A85D7" opacity=".25"/>
+                  <circle class="pin-inner" r="5" fill="#1C2F6B"/>
+                  <text x="9" y="3">León</text>
+                </g>
+                <g class="map-pin" data-city="Madrid" transform="translate(305,225)">
+                  <circle class="pin-outer" r="11" fill="#FFB400" opacity=".4"/>
+                  <circle class="pin-inner" r="6" fill="#1C2F6B"/>
+                  <text x="10" y="3">Madrid</text>
+                </g>
+                <g class="map-pin" data-city="Palma" transform="translate(500,250)">
+                  <circle class="pin-outer" r="10" fill="#5A85D7" opacity=".25"/>
+                  <circle class="pin-inner" r="5" fill="#1C2F6B"/>
+                  <text x="9" y="3">Palma</text>
+                </g>
+                <g class="map-pin" data-city="Lisboa" transform="translate(95,260)">
+                  <circle class="pin-outer" r="10" fill="#5A85D7" opacity=".25"/>
+                  <circle class="pin-inner" r="5" fill="#1C2F6B"/>
+                  <text x="9" y="3">Lisboa</text>
+                </g>
+
+                <!-- Etiqueta país -->
+                <text x="320" y="200" font-family="Outfit" font-size="13" font-weight="600" fill="#1C2F6B" opacity=".5">ESPAÑA</text>
+                <text x="105" y="225" font-family="Outfit" font-size="11" font-weight="600" fill="#1C2F6B" opacity=".5">PORTUGAL</text>
+              </svg>
+              <div class="city-info" id="cityInfo">
+                <h4 id="cityInfoTitle">📍 Ciudad</h4>
+                <ul id="cityInfoList"></ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" data-tour="alerts">
+            <h3>⚠️ Alertas recientes</h3>
+            <p class="subtitle">Eventos críticos que requieren atención</p>
+            <div class="alerts-list" id="alertsList"></div>
+          </div>
+        </div>
+
+        <!-- Deporte Base + Distribución -->
+        <div class="dash-grid">
+          <div class="card">
+            <h3>🌱 Deporte Base · Compromiso ABANCA</h3>
+            <p class="subtitle">Apoyo a la cantera y al deporte de base como motor social</p>
+            <div class="base-grid">
+              <div class="base-stat"><div class="num">+20K</div><div class="lbl">Deportistas</div></div>
+              <div class="base-stat"><div class="num">1.600</div><div class="lbl">Equipos</div></div>
+              <div class="base-stat"><div class="num">34</div><div class="lbl">Disciplinas</div></div>
+              <div class="base-stat"><div class="num">181</div><div class="lbl">Clubes</div></div>
+            </div>
+            <canvas id="chartBase" height="140"></canvas>
+          </div>
+
+          <div class="card">
+            <h3>🎯 Distribución por categoría</h3>
+            <p class="subtitle">Patrocinios activos por área deportiva</p>
+            <canvas id="chartCategoria" height="220"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================
+           SECCIÓN: PATROCINIOS
+           ==================================================== -->
+      <section class="section" id="patrocinios">
+        <div class="section-header">
+          <div>
+            <h2>Patrocinios activos</h2>
+            <p>Gestiona los acuerdos vigentes con clubes y entidades</p>
+          </div>
+          <button class="btn btn-primary">+ Nuevo patrocinio</button>
+        </div>
+
+        <div class="filters">
+          <input type="text" id="filterText" placeholder="Buscar por nombre..." />
+          <select id="filterEstado">
+            <option value="">Todos los estados</option>
+            <option value="activo">Activo</option>
+            <option value="revision">En revisión</option>
+            <option value="riesgo">En riesgo</option>
+          </select>
+          <select id="filterCategoria">
+            <option value="">Todas las categorías</option>
+            <option value="Fútbol">Fútbol</option>
+            <option value="Indoor">Indoor</option>
+            <option value="Náutica">Náutica</option>
+            <option value="Base+Comp">Base+Competición</option>
+          </select>
+          <button class="btn btn-ghost" id="resetFilters">Limpiar</button>
+        </div>
+
+        <div class="spons-grid" id="sponsGrid"></div>
+      </section>
+
+      <!-- ====================================================
+           SECCIÓN: CONTRATOS
+           ==================================================== -->
+      <section class="section" id="contratos">
+        <div class="section-header">
+          <div>
+            <h2>Contratos vigentes</h2>
+            <p>Visión legal y financiera de los acuerdos</p>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button class="btn btn-secondary" onclick="exportCSV()">📊 CSV</button>
+            <button class="btn btn-primary" onclick="exportPDF()">📄 PDF</button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Entidad</th>
+                <th>Categoría</th>
+                <th>Territorio</th>
+                <th>Vencimiento</th>
+                <th>Inversión</th>
+                <th>Derechos</th>
+                <th>Estado</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="contractsTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ====================================================
+           SECCIÓN: ACTIVACIONES
+           ==================================================== -->
+      <section class="section" id="activaciones">
+        <div class="section-header">
+          <div>
+            <h2>Activaciones</h2>
+            <p>Calendario y estado de las acciones de activación</p>
+          </div>
+          <button class="btn btn-primary">+ Nueva activación</button>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="label"><span class="ic">📅</span> Planificadas</div>
+            <div class="value">38</div>
+            <span class="delta neutral">2026 Q1-Q2</span>
+          </div>
+          <div class="kpi-card">
+            <div class="label"><span class="ic">✅</span> Completadas</div>
+            <div class="value">21</div>
+            <span class="delta up">▲ 55% objetivo</span>
+          </div>
+          <div class="kpi-card">
+            <div class="label"><span class="ic">🔄</span> En curso</div>
+            <div class="value">7</div>
+            <span class="delta neutral">activas</span>
+          </div>
+          <div class="kpi-card">
+            <div class="label"><span class="ic">⏳</span> Pendientes</div>
+            <div class="value">10</div>
+            <span class="delta neutral">próximos 30 días</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>📌 Cronología de activaciones</h3>
+          <p class="subtitle">Próximas y recientes</p>
+          <div class="timeline" id="timelineList"></div>
+        </div>
+      </section>
+
+      <!-- ====================================================
+           SECCIÓN: ROI & MÉTRICAS
+           ==================================================== -->
+      <section class="section" id="roi">
+        <div class="section-header">
+          <div>
+            <h2>ROI &amp; Métricas</h2>
+            <p>Retorno de la inversión y desempeño de marca</p>
+          </div>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="label"><span class="ic">📈</span> ROI promedio</div>
+            <div class="value">2,3x</div>
+            <span class="delta up">▲ 0,4 vs 2025</span>
+          </div>
+          <div class="kpi-card">
+            <div class="label"><span class="ic">👁️</span> Impresiones</div>
+            <div class="value">142M</div>
+            <span class="delta up">▲ 18,7%</span>
+          </div>
+          <div class="kpi-card">
+            <div class="label"><span class="ic">💎</span> Valor de marca</div>
+            <div class="value">19,3M€</div>
+            <span class="delta up">▲ 9,4%</span>
+          </div>
+          <div class="kpi-card">
+            <div class="label"><span class="ic">💬</span> Engagement</div>
+            <div class="value">3,8M</div>
+            <span class="delta up">▲ 22%</span>
+          </div>
+        </div>
+
+        <div class="dash-grid-2">
+          <div class="card">
+            <h3>📊 ROI por categoría</h3>
+            <p class="subtitle">Multiplicador de retorno por área</p>
+            <canvas id="chartROI" height="220"></canvas>
+          </div>
+          <div class="card">
+            <h3>📅 Evolución trimestral</h3>
+            <p class="subtitle">Engagement e impresiones acumuladas</p>
+            <canvas id="chartTrimestral" height="220"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>📋 KPIs trimestrales detallados</h3>
+          <div class="table-wrap" style="border:none;">
+            <table>
+              <thead>
+                <tr>
+                  <th>KPI</th>
+                  <th>Q1 2026</th>
+                  <th>Q2 2026</th>
+                  <th>Q3 2026</th>
+                  <th>Q4 2026 (est.)</th>
+                  <th>Objetivo</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><b>Awareness marca</b></td><td>62%</td><td>67%</td><td>71%</td><td>74%</td><td class="text-success">75%</td></tr>
+                <tr><td><b>Leads cualificados</b></td><td>4.210</td><td>5.380</td><td>6.120</td><td>6.800</td><td class="text-success">6.500</td></tr>
+                <tr><td><b>Cobertura mediática</b></td><td>2.140</td><td>2.420</td><td>2.890</td><td>3.100</td><td class="text-success">3.000</td></tr>
+                <tr><td><b>Sentiment positivo</b></td><td>78%</td><td>81%</td><td>83%</td><td>84%</td><td class="text-success">80%</td></tr>
+                <tr><td><b>Valor mediático (€M)</b></td><td>3,8</td><td>4,2</td><td>5,1</td><td>5,8</td><td class="text-warning">6,0</td></tr>
+                <tr><td><b>Activaciones digitales</b></td><td>14</td><td>18</td><td>22</td><td>26</td><td class="text-success">25</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================
+           SECCIÓN: NOTICIAS
+           ==================================================== -->
+      <section class="section" id="noticias">
+        <div class="section-header">
+          <div>
+            <h2>Noticias y comunicaciones</h2>
+            <p>Feed simulado de los clubes patrocinados</p>
+          </div>
+        </div>
+        <div class="news-grid" id="newsGrid"></div>
+      </section>
+
+      <!-- ====================================================
+           SECCIÓN: CONTACTO
+           ==================================================== -->
+      <section class="section" id="contacto">
+        <div class="section-header">
+          <div>
+            <h2>Equipo de patrocinios</h2>
+            <p>Responsables disponibles para gestionar acuerdos y activaciones</p>
+          </div>
+        </div>
+        <div class="contact-grid" id="contactGrid"></div>
+      </section>
+
+      <!-- ====================================================
+           SECCIÓN: TICKETS
+           ==================================================== -->
+      <section class="section" id="tickets">
+        <div class="section-header">
+          <div>
+            <h2>Tickets de soporte</h2>
+            <p>Incidencias, solicitudes y consultas internas</p>
+          </div>
+        </div>
+        <div class="tickets-wrap">
+          <div>
+            <div class="card">
+              <h3>🎟️ Tickets activos</h3>
+              <p class="subtitle">Pulsa para ver detalle</p>
+              <div id="ticketsList"></div>
+            </div>
+          </div>
+          <div>
+            <div class="card">
+              <h3>➕ Nuevo ticket</h3>
+              <p class="subtitle">Crea una solicitud al equipo</p>
+              <form id="ticketForm">
+                <div class="form-group">
+                  <label>Asunto</label>
+                  <input type="text" name="asunto" required placeholder="Ej. Reposición valla RC Deportivo" />
+                </div>
+                <div class="form-group">
+                  <label>Categoría</label>
+                  <select name="categoria">
+                    <option>Activación</option>
+                    <option>Contrato</option>
+                    <option>Hospitality</option>
+                    <option>Contenidos</option>
+                    <option>Reporte</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Prioridad</label>
+                  <select name="prioridad">
+                    <option value="low">Baja</option>
+                    <option value="mid" selected>Media</option>
+                    <option value="high">Alta</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Descripción</label>
+                  <textarea name="descripcion" required placeholder="Describe el caso..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Crear ticket</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================
+           SECCIÓN: KANBAN
+           ==================================================== -->
+      <section class="section" id="kanban">
+        <div class="section-header">
+          <div>
+            <h2>Kanban de contenidos</h2>
+            <p>Arrastra tarjetas entre columnas · Doble clic para editar</p>
+          </div>
+          <button class="btn btn-primary" onclick="addKanbanCard()">+ Nueva tarjeta</button>
+        </div>
+        <div class="kanban">
+          <div class="kanban-col" data-col="pendiente">
+            <h4>📌 Pendiente <span class="count">0</span></h4>
+            <div class="kanban-list"></div>
+          </div>
+          <div class="kanban-col" data-col="produccion">
+            <h4>🎬 En producción <span class="count">0</span></h4>
+            <div class="kanban-list"></div>
+          </div>
+          <div class="kanban-col" data-col="revision">
+            <h4>🔍 Revisión <span class="count">0</span></h4>
+            <div class="kanban-list"></div>
+          </div>
+          <div class="kanban-col" data-col="publicado">
+            <h4>✅ Publicado <span class="count">0</span></h4>
+            <div class="kanban-list"></div>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- =====================================================================
+     MODAL GENÉRICO (Detalle de patrocinio / contrato)
+     ===================================================================== -->
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modalTitle">Detalle</h3>
+      <button class="icon-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-tabs" id="modalTabs"></div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- =====================================================================
+     CHATBOX FLOTANTE
+     ===================================================================== -->
+<button class="chatbox-toggle" id="chatToggle">
+  <span class="pulse"></span>
+  💬
+</button>
+<div class="chatbox" id="chatbox">
+  <div class="chatbox-head">
+    <div class="ic-bot">🤖</div>
+    <div>
+      <h5>Asistente ABANCA</h5>
+      <small>Disponible 24/7</small>
+    </div>
+    <span class="close-x" onclick="toggleChat()">✕</span>
+  </div>
+  <div class="chat-messages" id="chatMessages">
+    <div class="chat-msg bot">¡Hola! Soy el asistente de patrocinios ABANCA. ¿En qué puedo ayudarte?</div>
+  </div>
+  <div class="chat-suggestions" id="chatSuggestions">
+    <span class="chat-suggestion">¿Cuántos patrocinios activos hay?</span>
+    <span class="chat-suggestion">ROI por categoría</span>
+    <span class="chat-suggestion">Próximas activaciones</span>
+    <span class="chat-suggestion">Renovar Breogán</span>
+  </div>
+  <form class="chat-input" id="chatForm">
+    <input type="text" id="chatInput" placeholder="Escribe tu pregunta..." />
+    <button type="submit">➤</button>
+  </form>
+</div>
+
+<!-- =====================================================================
+     CONTENEDOR DE TOASTS
+     ===================================================================== -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- =====================================================================
+     TOUR GUIADO INICIAL
+     ===================================================================== -->
+<div class="tour-overlay" id="tourOverlay">
+  <div class="tour-card">
+    <div class="step-icon" id="tourIcon">👋</div>
+    <h3 id="tourTitle"></h3>
+    <p id="tourText"></p>
+    <div class="tour-progress" id="tourProgress"></div>
+    <div class="tour-actions">
+      <button class="btn btn-ghost" onclick="endTour()">Saltar</button>
+      <button class="btn btn-primary" id="tourNext">Siguiente →</button>
+    </div>
+  </div>
+</div>
+
+<!-- =====================================================================
+     LÓGICA JAVASCRIPT
+     ===================================================================== -->
+<script>
+/* =====================================================================
+   1. DATOS ESTÁTICOS (precargados según propuesta ABANCA)
+   ===================================================================== */
+
+// Patrocinios: clubes y entidades agrupados por categoría
+const PATROCINIOS = [
+  // ---------- FÚTBOL ----------
+  { id:1, nombre:'RC Celta de Vigo', cat:'Fútbol', estado:'activo', inversion:1450000, alcance:'Internacional', progreso:82, ciudad:'Vigo', pais:'España', color:'#5A85D7', desc:'Acuerdo de patrocinio en LaLiga EA Sports con presencia en camiseta y derechos digitales.', vencimiento:'2027-06-30', territorio:'Europa', derechos:'Naming Stadium Bar, hospitality VIP, contenidos digitales, valla LED' },
+  { id:2, nombre:'RC Deportivo de La Coruña', cat:'Fútbol', estado:'riesgo', inversion:980000, alcance:'Nacional', progreso:65, ciudad:'A Coruña', pais:'España', color:'#1C2F6B', desc:'Patrocinio principal en Riazor con presencia perimetral y activaciones.', vencimiento:'2026-06-30', territorio:'Nacional', derechos:'Valla principal, naming sala VIP, redes sociales, palco' },
+  { id:3, nombre:'CD Lugo', cat:'Fútbol', estado:'activo', inversion:380000, alcance:'Regional', progreso:74, ciudad:'Lugo', pais:'España', color:'#5A85D7', desc:'Acuerdo en Primera RFEF con visibilidad en Anxo Carro.', vencimiento:'2027-06-30', territorio:'Galicia', derechos:'Camiseta espalda, valla, contenidos' },
+  { id:4, nombre:'CD Ourense CF', cat:'Fútbol', estado:'activo', inversion:240000, alcance:'Regional', progreso:80, ciudad:'Ourense', pais:'España', color:'#5A85D7', desc:'Patrocinio del club ourensano con extensión a categorías inferiores.', vencimiento:'2027-06-30', territorio:'Galicia', derechos:'Manga camiseta, valla, deporte base' },
+  { id:5, nombre:'Pontevedra FC', cat:'Fútbol', estado:'revision', inversion:210000, alcance:'Regional', progreso:58, ciudad:'Pontevedra', pais:'España', color:'#5A85D7', desc:'Acuerdo en revisión por modificación del plan deportivo.', vencimiento:'2026-06-30', territorio:'Galicia', derechos:'Camiseta, valla LED, eventos' },
+  { id:6, nombre:'CD Arenteiro', cat:'Fútbol', estado:'activo', inversion:165000, alcance:'Regional', progreso:78, ciudad:'O Carballiño', pais:'España', color:'#5A85D7', desc:'Patrocinio de fomento del fútbol modesto en Galicia interior.', vencimiento:'2027-06-30', territorio:'Galicia', derechos:'Camiseta, deporte base, hospitality' },
+
+  // ---------- INDOOR ----------
+  { id:7, nombre:'Río Breogán', cat:'Indoor', estado:'revision', inversion:780000, alcance:'Nacional', progreso:88, ciudad:'Lugo', pais:'España', color:'#1C2F6B', desc:'Naming rights del club lucense en Liga ACB.', vencimiento:'2026-06-30', territorio:'Nacional', derechos:'Naming club, camiseta, pabellón, palco' },
+  { id:8, nombre:'Monbus Obradoiro CAB', cat:'Indoor', estado:'activo', inversion:620000, alcance:'Nacional', progreso:84, ciudad:'Santiago', pais:'España', color:'#5A85D7', desc:'Patrocinio en ACB con presencia en Multiusos Fontes do Sar.', vencimiento:'2027-06-30', territorio:'Nacional', derechos:'Camiseta, pabellón, hospitality' },
+  { id:9, nombre:'Club Ourense Baloncesto', cat:'Indoor', estado:'activo', inversion:340000, alcance:'Regional', progreso:79, ciudad:'Ourense', pais:'España', color:'#5A85D7', desc:'Acuerdo con el COB en categoría LEB Oro.', vencimiento:'2027-06-30', territorio:'Galicia', derechos:'Camiseta espalda, valla, eventos' },
+  { id:10, nombre:'Básquet Coruña', cat:'Indoor', estado:'activo', inversion:295000, alcance:'Regional', progreso:73, ciudad:'A Coruña', pais:'España', color:'#5A85D7', desc:'Patrocinio en LEB Oro y categorías de cantera.', vencimiento:'2027-06-30', territorio:'Galicia', derechos:'Manga, deporte base, hospitality' },
+  { id:11, nombre:'BAXI Ferrol', cat:'Indoor', estado:'activo', inversion:285000, alcance:'Regional', progreso:81, ciudad:'Ferrol', pais:'España', color:'#5A85D7', desc:'Baloncesto femenino en Liga F Endesa.', vencimiento:'2027-06-30', territorio:'Nacional', derechos:'Camiseta, pabellón, contenidos' },
+  { id:12, nombre:'ADEMAR León', cat:'Indoor', estado:'activo', inversion:410000, alcance:'Nacional', progreso:76, ciudad:'León', pais:'España', color:'#1C2F6B', desc:'Balonmano de élite en Liga ASOBAL con expansión europea.', vencimiento:'2027-06-30', territorio:'Nacional', derechos:'Camiseta, hospitality, contenidos digitales' },
+  { id:13, nombre:'O Parrulo Ferrol', cat:'Indoor', estado:'activo', inversion:175000, alcance:'Regional', progreso:72, ciudad:'Ferrol', pais:'España', color:'#5A85D7', desc:'Fútbol sala en Primera División.', vencimiento:'2027-06-30', territorio:'Galicia', derechos:'Camiseta, pabellón' },
+  { id:14, nombre:'HC Liceo', cat:'Indoor', estado:'activo', inversion:215000, alcance:'Regional', progreso:86, ciudad:'A Coruña', pais:'España', color:'#5A85D7', desc:'Hockey sobre patines en OK Liga, club histórico coruñés.', vencimiento:'2027-06-30', territorio:'Galicia', derechos:'Camiseta, pabellón, eventos' },
+
+  // ---------- NÁUTICA ----------
+  { id:15, nombre:'ABANCA Pantín Classic', cat:'Náutica', estado:'activo', inversion:520000, alcance:'Internacional', progreso:90, ciudad:'Valdoviño', pais:'España', color:'#1C2F6B', desc:'Naming title del campeonato mundial de surf de Pantín.', vencimiento:'2028-09-30', territorio:'Internacional', derechos:'Naming, broadcasting, hospitality, contenidos' },
+  { id:16, nombre:'Copa del Rey MAPFRE', cat:'Náutica', estado:'activo', inversion:680000, alcance:'Internacional', progreso:85, ciudad:'Palma', pais:'España', color:'#1C2F6B', desc:'Patrocinador oficial de la regata más prestigiosa del Mediterráneo.', vencimiento:'2027-08-31', territorio:'Internacional', derechos:'Patrocinador oficial, hospitality, contenidos' },
+  { id:17, nombre:'Real Club Náutico Palma', cat:'Náutica', estado:'activo', inversion:320000, alcance:'Nacional', progreso:78, ciudad:'Palma', pais:'España', color:'#5A85D7', desc:'Acuerdo institucional con el club organizador.', vencimiento:'2027-12-31', territorio:'Nacional', derechos:'Naming sala, eventos, contenidos' },
+  { id:18, nombre:'Federación Gallega de Remo', cat:'Náutica', estado:'activo', inversion:185000, alcance:'Regional', progreso:82, ciudad:'A Coruña', pais:'España', color:'#5A85D7', desc:'Apoyo a Liga ACT y Bandeira ABANCA.', vencimiento:'2027-09-30', territorio:'Galicia', derechos:'Naming bandera, deporte base' },
+  { id:19, nombre:'Federación Gallega Piragüismo', cat:'Náutica', estado:'activo', inversion:140000, alcance:'Regional', progreso:75, ciudad:'Pontevedra', pais:'España', color:'#5A85D7', desc:'Patrocinio del Trofeo ABANCA y selecciones gallegas.', vencimiento:'2027-09-30', territorio:'Galicia', derechos:'Naming, eventos, deporte base' },
+  { id:20, nombre:'Galician Kitesurf Tour', cat:'Náutica', estado:'activo', inversion:95000, alcance:'Regional', progreso:70, ciudad:'A Lanzada', pais:'España', color:'#5A85D7', desc:'Circuito gallego de kitesurf con 5 pruebas.', vencimiento:'2027-10-31', territorio:'Galicia', derechos:'Naming, contenidos digitales' },
+
+  // ---------- BASE + ALTA COMPETICIÓN ----------
+  { id:21, nombre:'Disciplinas Olímpicas ABANCA', cat:'Base+Comp', estado:'activo', inversion:540000, alcance:'Nacional', progreso:88, ciudad:'Madrid', pais:'España', color:'#1C2F6B', desc:'Programa de apoyo a 14 disciplinas olímpicas y deportistas individuales.', vencimiento:'2028-12-31', territorio:'Nacional', derechos:'Naming programa, deportistas embajadores, eventos' },
+  { id:22, nombre:'Fundación Deporte Galego', cat:'Base+Comp', estado:'activo', inversion:380000, alcance:'Regional', progreso:91, ciudad:'Santiago', pais:'España', color:'#1C2F6B', desc:'Apoyo institucional al deporte gallego en todas sus categorías.', vencimiento:'2028-12-31', territorio:'Galicia', derechos:'Naming programa, becas, eventos' },
+
+  // ---------- PORTUGAL ----------
+  { id:23, nombre:'CF Os Belenenses', cat:'Fútbol', estado:'activo', inversion:280000, alcance:'Internacional', progreso:71, ciudad:'Lisboa', pais:'Portugal', color:'#5A85D7', desc:'Expansión de la marca ABANCA en el mercado portugués.', vencimiento:'2027-06-30', territorio:'Portugal', derechos:'Camiseta, valla, contenidos' },
+  { id:24, nombre:'Vela Atlántica Lisboa', cat:'Náutica', estado:'activo', inversion:140000, alcance:'Internacional', progreso:68, ciudad:'Lisboa', pais:'Portugal', color:'#5A85D7', desc:'Regata internacional con paso por Cascais y Lisboa.', vencimiento:'2027-09-30', territorio:'Portugal', derechos:'Naming etapa, hospitality' },
+];
+
+// Mapeo de ciudades -> entidades patrocinadas (para mapa interactivo)
+const CIUDADES_MAP = {
+  'A Coruña':   ['RC Deportivo','Básquet Coruña','HC Liceo','Fed. Gallega Remo'],
+  'Vigo':       ['RC Celta de Vigo'],
+  'Santiago':   ['Monbus Obradoiro CAB','Fund. Deporte Galego'],
+  'Lugo':       ['CD Lugo','Río Breogán'],
+  'Ourense':    ['CD Ourense CF','Club Ourense Baloncesto'],
+  'León':       ['ADEMAR León'],
+  'Madrid':     ['Disciplinas Olímpicas ABANCA','Eventos institucionales'],
+  'Palma':      ['Copa del Rey MAPFRE','Real Club Náutico Palma'],
+  'Lisboa':     ['CF Os Belenenses','Vela Atlántica Lisboa'],
+};
+
+// Alertas críticas mostradas en el dashboard
+const ALERTAS = [
+  { tipo:'danger',  titulo:'Valla LED dañada · RC Deportivo',     desc:'Reposición urgente antes del próximo partido', fecha:'hace 2h' },
+  { tipo:'warning', titulo:'Renovación CB Río Breogán',           desc:'Contrato expira en 75 días – iniciar conversación', fecha:'hace 6h' },
+  { tipo:'info',    titulo:'Hospitality RC Celta · entradas',     desc:'Solicitud de 12 invitaciones extra para Q2', fecha:'hace 1d' },
+  { tipo:'warning', titulo:'Contenidos Pantín Classic pendientes', desc:'Aprobar 4 piezas para campaña internacional', fecha:'hace 2d' },
+];
+
+// Activaciones en cronología
+const ACTIVACIONES = [
+  { titulo:'Naming Bandeira ABANCA · Remo', fecha:'12 ene 2026', estado:'completed', progreso:100, desc:'Final liga ACT con activación VIP en Riazor' },
+  { titulo:'Hospitality Copa del Rey MAPFRE', fecha:'02 ago 2026', estado:'in-progress', progreso:55, desc:'Programa de invitados premium · 240 plazas' },
+  { titulo:'Lanzamiento campaña Pantín Classic', fecha:'18 ago 2026', estado:'in-progress', progreso:40, desc:'Spot TV + redes + activación playa' },
+  { titulo:'Día del Aficionado · RC Deportivo', fecha:'27 sep 2026', estado:'pending', progreso:10, desc:'Entrada gratis a 5.000 niños del deporte base' },
+  { titulo:'Clinic ABANCA · Obradoiro', fecha:'15 oct 2026', estado:'pending', progreso:5,  desc:'Jornada técnica con jugadores ACB en colegios' },
+  { titulo:'Activación naming Breogán', fecha:'08 nov 2026', estado:'pending', progreso:0,  desc:'Pendiente cierre de la renovación' },
+  { titulo:'Gala Fundación Deporte Galego', fecha:'14 dic 2025', estado:'completed', progreso:100, desc:'Premios al deporte gallego del año' },
+];
+
+// Contratos: vista tabular
+const CONTRATOS = PATROCINIOS.map(p => ({
+  entidad:p.nombre, cat:p.cat, territorio:p.territorio, vencimiento:p.vencimiento,
+  inversion:p.inversion, derechos:p.derechos, estado:p.estado, ref:p
+}));
+
+// Noticias simuladas
+const NOTICIAS = [
+  { club:'RC Celta', titulo:'Histórica victoria del Celta en Balaídos', resumen:'El conjunto céltico se impone 3-1 en una noche memorable de LaLiga.', fecha:'24 abr 2026', icon:'⚽', color:'#7BC2E0' },
+  { club:'CB Breogán', titulo:'El Breogán certifica la permanencia en ACB', resumen:'La afición lucense celebra una temporada de éxitos en el Pazo dos Deportes.', fecha:'22 abr 2026', icon:'🏀', color:'#1C2F6B' },
+  { club:'Pantín Classic', titulo:'ABANCA renueva el patrocinio de Pantín hasta 2028', resumen:'El campeonato mundial de surf seguirá llevando el nombre del banco gallego.', fecha:'20 abr 2026', icon:'🏄', color:'#5A85D7' },
+  { club:'RC Deportivo', titulo:'El Dépor amplía el acuerdo con ABANCA', resumen:'Nueva temporada con presencia en Riazor y refuerzo en activaciones.', fecha:'18 abr 2026', icon:'⚽', color:'#1C2F6B' },
+  { club:'ADEMAR León', titulo:'ADEMAR avanza a las semifinales europeas', resumen:'La afición leonesa vibra con el balonmano continental.', fecha:'15 abr 2026', icon:'🤾', color:'#5A85D7' },
+  { club:'Fund. Deporte Galego', titulo:'Más de 20.000 niños participan en el deporte base', resumen:'ABANCA refuerza su compromiso con la cantera.', fecha:'12 abr 2026', icon:'🌱', color:'#22B07D' },
+];
+
+// Equipo de patrocinios
+const CONTACTOS = [
+  { nombre:'María Castro', rol:'Directora de Patrocinios', email:'mcastro@abanca.com', iniciales:'MC' },
+  { nombre:'Daniel Pereira', rol:'Manager Fútbol', email:'dpereira@abanca.com', iniciales:'DP' },
+  { nombre:'Lucía Vázquez', rol:'Manager Indoor', email:'lvazquez@abanca.com', iniciales:'LV' },
+  { nombre:'Carlos Méndez', rol:'Manager Náutica', email:'cmendez@abanca.com', iniciales:'CM' },
+  { nombre:'Sara Iglesias', rol:'Activaciones & Eventos', email:'siglesias@abanca.com', iniciales:'SI' },
+  { nombre:'Roberto Souto', rol:'Comunicación & Contenidos', email:'rsouto@abanca.com', iniciales:'RS' },
+  { nombre:'Ana Beltrán', rol:'Legal & Contratos', email:'abeltran@abanca.com', iniciales:'AB' },
+  { nombre:'João Ferreira', rol:'Mercado Portugal', email:'jferreira@abanca.com', iniciales:'JF' },
+];
+
+// Tickets iniciales
+let TICKETS = [
+  { id:'TKT-2401', asunto:'Reposición valla LED Riazor', cat:'Activación', prio:'high', fecha:'24 abr 2026', desc:'Daño en la valla del fondo. Necesario antes del partido del sábado.' },
+  { id:'TKT-2400', asunto:'Renovación contrato Breogán', cat:'Contrato', prio:'high', fecha:'22 abr 2026', desc:'Iniciar conversaciones para renovación 2026-2029.' },
+  { id:'TKT-2399', asunto:'Hospitality Copa del Rey · 12 plazas extra', cat:'Hospitality', prio:'mid', fecha:'21 abr 2026', desc:'Solicitud de invitaciones adicionales para clientes premium.' },
+  { id:'TKT-2398', asunto:'Aprobación 4 piezas Pantín Classic', cat:'Contenidos', prio:'mid', fecha:'19 abr 2026', desc:'Pendiente revisión de spots y banners para campaña.' },
+  { id:'TKT-2397', asunto:'Reporte Q1 Fundación Deporte Galego', cat:'Reporte', prio:'low', fecha:'15 abr 2026', desc:'Recopilar KPIs del trimestre para informe trimestral.' },
+];
+
+// Tarjetas iniciales del Kanban
+let KANBAN = [
+  { id:'K1', col:'pendiente',  titulo:'Spot TV ABANCA Pantín', desc:'Crear guion de 30s para mundial de surf', tag:'Pantín' },
+  { id:'K2', col:'pendiente',  titulo:'Reels naming Breogán',  desc:'5 reels para celebración fin de temporada', tag:'Breogán' },
+  { id:'K3', col:'pendiente',  titulo:'Banners hospitality Copa del Rey', desc:'Set de banners para mailing premium', tag:'Náutica' },
+  { id:'K4', col:'produccion', titulo:'Vídeo cantera Celta',   desc:'Pieza documental sobre A Madroa', tag:'Celta' },
+  { id:'K5', col:'produccion', titulo:'Sesión foto Obradoiro', desc:'Equipación 26/27 con presencia ABANCA', tag:'Obradoiro' },
+  { id:'K6', col:'revision',   titulo:'Comunicado renovación Dépor', desc:'Pendiente validación legal', tag:'Dépor' },
+  { id:'K7', col:'publicado',  titulo:'Post Día del Deporte Galego', desc:'Publicado en LinkedIn y X', tag:'Fundación' },
+  { id:'K8', col:'publicado',  titulo:'Mini-doc ADEMAR Europa', desc:'Pieza de 2 min publicada en YouTube', tag:'ADEMAR' },
+];
+
+/* =====================================================================
+   2. NAVEGACIÓN SPA
+   ===================================================================== */
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const sec = document.getElementById(id);
+  const nav = document.querySelector(`.nav-item[data-section="${id}"]`);
+  if (sec) sec.classList.add('active');
+  if (nav) nav.classList.add('active');
+  // En móvil, cierra el sidebar al navegar
+  document.getElementById('sidebar').classList.remove('open');
+  // Scroll arriba
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+document.querySelectorAll('.nav-item').forEach(n => {
+  n.addEventListener('click', () => showSection(n.dataset.section));
+});
+
+// Toggle de menú móvil
+document.getElementById('menuToggle').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+});
+
+/* =====================================================================
+   3. RENDERIZADO DE PATROCINIOS (con filtros)
+   ===================================================================== */
+function renderPatrocinios() {
+  const txt = document.getElementById('filterText').value.toLowerCase();
+  const est = document.getElementById('filterEstado').value;
+  const cat = document.getElementById('filterCategoria').value;
+
+  const filtered = PATROCINIOS.filter(p =>
+    (!txt || p.nombre.toLowerCase().includes(txt) || p.cat.toLowerCase().includes(txt) || p.ciudad.toLowerCase().includes(txt))
+    && (!est || p.estado === est)
+    && (!cat || p.cat === cat)
+  );
+
+  const grid = document.getElementById('sponsGrid');
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div class="card" style="grid-column:1/-1; text-align:center; padding:50px; color:var(--text-muted);">🔍 Sin resultados para los filtros aplicados.</div>';
+    return;
+  }
+
+  grid.innerHTML = filtered.map(p => {
+    const badgeClass = { activo:'badge-active', revision:'badge-review', riesgo:'badge-risk' }[p.estado];
+    const badgeText  = { activo:'Activo', revision:'Revisión', riesgo:'Riesgo' }[p.estado];
+    const iniciales  = p.nombre.split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase();
+    return `
+      <div class="spons-card">
+        <div class="top">
+          <div class="ent-icon" style="background:linear-gradient(135deg, ${p.color}, var(--abanca-navy));">${iniciales}</div>
+          <span class="badge ${badgeClass}">${badgeText}</span>
+        </div>
+        <h4>${p.nombre}</h4>
+        <div class="cat">${p.cat} · ${p.ciudad}</div>
+        <div class="stats">
+          <div><span>Inversión</span><b>${(p.inversion/1000).toFixed(0)}K€</b></div>
+          <div><span>Alcance</span><b>${p.alcance}</b></div>
+        </div>
+        <div class="progress"><div style="width:${p.progreso}%"></div></div>
+        <div class="progress-label">
+          <span>Cumplimiento</span>
+          <span><b>${p.progreso}%</b></span>
+        </div>
+        <div class="actions">
+          <button class="btn btn-secondary" onclick="openPatrocinioDetail(${p.id})">Detalle</button>
+          <button class="btn btn-primary" onclick="contactPatrocinio(${p.id})">Contactar</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+['filterText','filterEstado','filterCategoria'].forEach(id =>
+  document.getElementById(id).addEventListener('input', renderPatrocinios)
+);
+document.getElementById('resetFilters').addEventListener('click', () => {
+  document.getElementById('filterText').value = '';
+  document.getElementById('filterEstado').value = '';
+  document.getElementById('filterCategoria').value = '';
+  renderPatrocinios();
+});
+
+/* =====================================================================
+   4. RENDER MAPA INTERACTIVO + CITY INFO
+   ===================================================================== */
+function setupMap() {
+  document.querySelectorAll('.map-pin').forEach(pin => {
+    pin.addEventListener('click', () => {
+      const city = pin.dataset.city;
+      const list = CIUDADES_MAP[city] || ['Sin entidades registradas'];
+      const info = document.getElementById('cityInfo');
+      document.getElementById('cityInfoTitle').textContent = '📍 ' + city;
+      document.getElementById('cityInfoList').innerHTML = list.map(e => `<li>· ${e}</li>`).join('');
+      info.classList.add('show');
+    });
+  });
+}
+
+/* =====================================================================
+   5. RENDER ALERTAS, ACTIVACIONES, CONTRATOS, NOTICIAS, CONTACTOS
+   ===================================================================== */
+function renderAlertas() {
+  document.getElementById('alertsList').innerHTML = ALERTAS.map(a => `
+    <div class="alert-item ${a.tipo}">
+      <div class="ic-circle">${a.tipo==='danger'?'⚠':a.tipo==='warning'?'🕒':'ℹ'}</div>
+      <div class="body">
+        <strong>${a.titulo}</strong>
+        <span>${a.desc}</span>
+      </div>
+      <time>${a.fecha}</time>
+    </div>`).join('');
+}
+
+function renderActivaciones() {
+  document.getElementById('timelineList').innerHTML = ACTIVACIONES.map(a => `
+    <div class="timeline-item ${a.estado}">
+      <div class="ti-head">
+        <h5>${a.titulo}</h5>
+        <span class="ti-date">📅 ${a.fecha}</span>
+      </div>
+      <p>${a.desc}</p>
+      <div class="ti-bar"><div style="width:${a.progreso}%"></div></div>
+    </div>`).join('');
+}
+
+function renderContratos() {
+  document.getElementById('contractsTable').innerHTML = CONTRATOS.map(c => {
+    const badgeClass = { activo:'badge-active', revision:'badge-review', riesgo:'badge-risk' }[c.estado];
+    const badgeText  = { activo:'Activo', revision:'Revisión', riesgo:'Riesgo' }[c.estado];
+    return `
+      <tr>
+        <td><b>${c.entidad}</b></td>
+        <td>${c.cat}</td>
+        <td>${c.territorio}</td>
+        <td>${c.vencimiento}</td>
+        <td><b>${(c.inversion/1000).toFixed(0)}K€</b></td>
+        <td style="font-size:12px; color:var(--text-muted);">${c.derechos.substring(0,40)}...</td>
+        <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+        <td><button class="btn btn-ghost" onclick="openContractDetail(${c.ref.id})">Ver</button></td>
+      </tr>`;
+  }).join('');
+}
+
+function renderNoticias() {
+  document.getElementById('newsGrid').innerHTML = NOTICIAS.map(n => `
+    <div class="news-card">
+      <div class="img" style="background:linear-gradient(135deg, ${n.color}, var(--abanca-navy));">${n.icon}</div>
+      <div class="body">
+        <small>${n.club}</small>
+        <h4>${n.titulo}</h4>
+        <p>${n.resumen}</p>
+        <time>📅 ${n.fecha}</time>
+      </div>
+    </div>`).join('');
+}
+
+function renderContactos() {
+  document.getElementById('contactGrid').innerHTML = CONTACTOS.map(c => `
+    <div class="contact-card">
+      <div class="avatar-lg">${c.iniciales}</div>
+      <h4>${c.nombre}</h4>
+      <div class="role">${c.rol}</div>
+      <a href="mailto:${c.email}">✉️ ${c.email}</a>
+    </div>`).join('');
+}
+
+function renderTickets() {
+  const cls = { high:'priority-high', mid:'priority-mid', low:'priority-low' };
+  const txt = { high:'Alta', mid:'Media', low:'Baja' };
+  document.getElementById('ticketsList').innerHTML = TICKETS.map(t => `
+    <div class="ticket-item ${cls[t.prio]}">
+      <div class="head">
+        <h5>${t.id} · ${t.asunto}</h5>
+        <span class="badge ${t.prio==='high'?'badge-risk':t.prio==='mid'?'badge-review':'badge-active'}">${txt[t.prio]}</span>
+      </div>
+      <p>${t.desc}</p>
+      <div class="meta">
+        <span>📁 ${t.cat}</span>
+        <span>📅 ${t.fecha}</span>
+      </div>
+    </div>`).join('');
+}
+
+// Formulario de creación de tickets
+document.getElementById('ticketForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const id = 'TKT-' + (2402 + TICKETS.length);
+  TICKETS.unshift({
+    id, asunto: fd.get('asunto'), cat: fd.get('categoria'),
+    prio: fd.get('prioridad'), fecha: 'hoy',
+    desc: fd.get('descripcion')
+  });
+  e.target.reset();
+  renderTickets();
+  showToast('success', 'Ticket creado', `${id} registrado correctamente.`);
+});
+
+/* =====================================================================
+   6. KANBAN CON DRAG & DROP
+   ===================================================================== */
+function renderKanban() {
+  document.querySelectorAll('.kanban-col').forEach(col => {
+    const colName = col.dataset.col;
+    const items = KANBAN.filter(k => k.col === colName);
+    col.querySelector('.count').textContent = items.length;
+    col.querySelector('.kanban-list').innerHTML = items.map(k => `
+      <div class="kanban-card" draggable="true" data-id="${k.id}">
+        <h6>${k.titulo}</h6>
+        <p>${k.desc}</p>
+        <span class="tag">${k.tag}</span>
+      </div>`).join('');
+  });
+  bindKanbanDrag();
+}
+
+function bindKanbanDrag() {
+  let dragEl = null;
+  document.querySelectorAll('.kanban-card').forEach(card => {
+    // Drag start
+    card.addEventListener('dragstart', e => {
+      dragEl = card;
+      card.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    // Drag end
+    card.addEventListener('dragend', () => {
+      card.classList.remove('dragging');
+    });
+    // Doble clic = editar
+    card.addEventListener('dblclick', () => {
+      const id = card.dataset.id;
+      const k = KANBAN.find(x => x.id === id);
+      const nuevo = prompt('Editar título:', k.titulo);
+      if (nuevo && nuevo.trim()) {
+        k.titulo = nuevo.trim();
+        renderKanban();
+        showToast('info', 'Tarjeta actualizada', `Cambios guardados.`);
+      }
+    });
+  });
+  document.querySelectorAll('.kanban-col').forEach(col => {
+    col.addEventListener('dragover', e => {
+      e.preventDefault();
+      col.classList.add('drag-over');
+    });
+    col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
+    col.addEventListener('drop', e => {
+      e.preventDefault();
+      col.classList.remove('drag-over');
+      if (!dragEl) return;
+      const id = dragEl.dataset.id;
+      const k = KANBAN.find(x => x.id === id);
+      if (k) {
+        k.col = col.dataset.col;
+        renderKanban();
+        showToast('success', 'Tarjeta movida', `→ ${col.dataset.col}`);
+      }
+    });
+  });
+}
+
+function addKanbanCard() {
+  const titulo = prompt('Título de la tarjeta:');
+  if (!titulo) return;
+  const desc = prompt('Descripción:') || '';
+  KANBAN.push({
+    id: 'K' + (KANBAN.length + 1),
+    col: 'pendiente',
+    titulo, desc, tag: 'Nueva'
+  });
+  renderKanban();
+  showToast('success', 'Tarjeta creada', titulo);
+}
+
+/* =====================================================================
+   7. MODAL DE DETALLE (Patrocinios + Contratos)
+   ===================================================================== */
+function openModal(title, tabsHtml, bodyHtml) {
+  document.getElementById('modalTitle').innerHTML = title;
+  document.getElementById('modalTabs').innerHTML = tabsHtml;
+  document.getElementById('modalBody').innerHTML = bodyHtml;
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal() { document.getElementById('modal').classList.remove('show'); }
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target.id === 'modal') closeModal();
+});
+
+function openPatrocinioDetail(id) {
+  const p = PATROCINIOS.find(x => x.id === id);
+  if (!p) return;
+  const tabs = `
+    <div class="modal-tab active" data-tab="resumen">📋 Resumen</div>
+    <div class="modal-tab" data-tab="contrato">📄 Contrato</div>
+    <div class="modal-tab" data-tab="activaciones">⚡ Activaciones</div>
+    <div class="modal-tab" data-tab="metricas">📈 Métricas</div>`;
+
+  const body = `
+    <div class="modal-tab-content active" data-tab="resumen">
+      <p style="margin-bottom:14px; color:var(--text-muted);">${p.desc}</p>
+      <div class="detail-grid">
+        <div><span>Categoría</span><b>${p.cat}</b></div>
+        <div><span>Estado</span><b style="text-transform:capitalize;">${p.estado}</b></div>
+        <div><span>Inversión</span><b>${(p.inversion/1000).toFixed(0)}K€</b></div>
+        <div><span>Alcance</span><b>${p.alcance}</b></div>
+        <div><span>Ciudad</span><b>${p.ciudad}</b></div>
+        <div><span>Vencimiento</span><b>${p.vencimiento}</b></div>
+      </div>
+      <div style="margin-top:12px;">
+        <span style="font-size:12px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:1px;">Cumplimiento</span>
+        <div class="progress" style="height:10px; margin-top:6px; background:var(--abanca-blue-soft); border-radius:6px; overflow:hidden;">
+          <div style="width:${p.progreso}%; height:100%; background:linear-gradient(90deg, var(--abanca-blue), var(--abanca-navy));"></div>
+        </div>
+        <p style="margin-top:6px; font-size:13px;"><b>${p.progreso}%</b> sobre objetivo del trimestre</p>
+      </div>
+    </div>
+    <div class="modal-tab-content" data-tab="contrato">
+      <div class="clause"><strong>📌 Naming &amp; visibilidad</strong>${p.derechos}</div>
+      <div class="clause"><strong>🎟️ Hospitality</strong>Cesión de palco VIP, 12 entradas por partido y eventos exclusivos.</div>
+      <div class="clause"><strong>📱 Digital</strong>Inclusión en campañas digitales, redes sociales del club y plataforma OTT.</div>
+      <div class="clause"><strong>⚠️ Penalizaciones</strong>Cláusula del 8% por incumplimiento de visibilidad mínima pactada.</div>
+      <div class="clause"><strong>🔄 Renovación</strong>Tácita por 1 año salvo notificación con 6 meses de antelación.</div>
+    </div>
+    <div class="modal-tab-content" data-tab="activaciones">
+      <ul style="list-style:none;">
+        <li style="padding:10px; border-bottom:1px solid var(--border);">⚡ <b>Activación día del aficionado</b> · 1.500 asistentes</li>
+        <li style="padding:10px; border-bottom:1px solid var(--border);">⚡ <b>Cluster digital pre-temporada</b> · 2,1M impresiones</li>
+        <li style="padding:10px; border-bottom:1px solid var(--border);">⚡ <b>Hospitality clientes premium</b> · 84% satisfacción</li>
+        <li style="padding:10px;">⚡ <b>Programa cantera ABANCA</b> · 320 niños beneficiados</li>
+      </ul>
+    </div>
+    <div class="modal-tab-content" data-tab="metricas">
+      <div class="detail-grid">
+        <div><span>Impresiones</span><b>${(Math.random()*30+5).toFixed(1)}M</b></div>
+        <div><span>Engagement</span><b>${(Math.random()*8+1).toFixed(2)}M</b></div>
+        <div><span>Valor mediático</span><b>${(p.inversion*2.3/1000000).toFixed(2)}M€</b></div>
+        <div><span>ROI estimado</span><b>${(2 + Math.random()).toFixed(1)}x</b></div>
+        <div><span>Sentiment</span><b class="text-success">+${(75+Math.random()*15).toFixed(0)}%</b></div>
+        <div><span>Cobertura</span><b>${(150+Math.random()*200).toFixed(0)} medios</b></div>
+      </div>
+    </div>`;
+
+  openModal(`${p.nombre} <span class="badge badge-${p.estado==='activo'?'active':p.estado==='revision'?'review':'risk'}" style="margin-left:8px;">${p.estado}</span>`, tabs, body);
+  bindModalTabs();
+}
+
+function openContractDetail(id) { openPatrocinioDetail(id); }
+
+function bindModalTabs() {
+  document.querySelectorAll('.modal-tab').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.modal-tab').forEach(x => x.classList.remove('active'));
+      document.querySelectorAll('.modal-tab-content').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      document.querySelector(`.modal-tab-content[data-tab="${t.dataset.tab}"]`).classList.add('active');
+    });
+  });
+}
+
+function contactPatrocinio(id) {
+  const p = PATROCINIOS.find(x => x.id === id);
+  showToast('info', 'Contacto iniciado', `Email enviado al manager de ${p.nombre}.`);
+}
+
+/* =====================================================================
+   8. EXPORTACIÓN PDF / CSV (Contratos)
+   ===================================================================== */
+function exportCSV() {
+  let csv = 'Entidad;Categoría;Territorio;Vencimiento;Inversión;Estado\n';
+  CONTRATOS.forEach(c => {
+    csv += `${c.entidad};${c.cat};${c.territorio};${c.vencimiento};${c.inversion};${c.estado}\n`;
+  });
+  const blob = new Blob([csv], { type:'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'contratos_abanca.csv'; a.click();
+  showToast('success', 'CSV exportado', 'Descarga lista');
+}
+
+function exportPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFillColor(28, 47, 107);
+  doc.rect(0, 0, 210, 30, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(16);
+  doc.text('ABANCA · Contratos de Patrocinio', 14, 18);
+  doc.setFontSize(9); doc.text('Generado: ' + new Date().toLocaleDateString('es-ES'), 14, 24);
+
+  doc.setTextColor(28,47,107);
+  let y = 42;
+  doc.setFontSize(10);
+  doc.text('Entidad', 14, y); doc.text('Cat.', 70, y); doc.text('Vence', 100, y); doc.text('€', 140, y); doc.text('Estado', 170, y);
+  doc.line(14, y+2, 196, y+2);
+  y += 8;
+
+  CONTRATOS.forEach(c => {
+    if (y > 270) { doc.addPage(); y = 20; }
+    doc.setFontSize(9);
+    doc.setTextColor(40,40,40);
+    doc.text(c.entidad.substring(0,28), 14, y);
+    doc.text(c.cat, 70, y);
+    doc.text(c.vencimiento, 100, y);
+    doc.text((c.inversion/1000).toFixed(0)+'K', 140, y);
+    doc.text(c.estado, 170, y);
+    y += 6;
+  });
+
+  doc.save('contratos_abanca.pdf');
+  showToast('success', 'PDF exportado', 'Contratos listos');
+}
+
+/* =====================================================================
+   9. INFORME IA (PDF con KPIs, mapa y alertas)
+   ===================================================================== */
+async function generarInformeIA() {
+  showToast('info', 'Generando Informe IA...', 'Recopilando datos y métricas');
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  // PORTADA
+  doc.setFillColor(28, 47, 107);
+  doc.rect(0, 0, 210, 297, 'F');
+  doc.setFillColor(90, 133, 215);
+  doc.circle(180, 30, 30, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(32);
+  doc.setFont(undefined, 'bold');
+  doc.text('ABANCA', 20, 70);
+  doc.setFontSize(14);
+  doc.setFont(undefined, 'normal');
+  doc.text('Informe Ejecutivo de Patrocinios', 20, 82);
+
+  doc.setFontSize(10);
+  doc.setTextColor(180, 200, 255);
+  doc.text('Generado por IA · ' + new Date().toLocaleDateString('es-ES'), 20, 92);
+
+  doc.setDrawColor(90, 133, 215);
+  doc.setLineWidth(0.5);
+  doc.line(20, 100, 100, 100);
+
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(11);
+  doc.text('Resumen Q1-Q2 2026', 20, 115);
+  doc.setFontSize(9);
+  doc.setTextColor(180, 200, 255);
+  const intro = 'Este informe sintetiza el rendimiento del portafolio de patrocinios deportivos de ABANCA, abarcando 24 acuerdos activos en España y Portugal con una inversión total de 8,4M€.';
+  const splitIntro = doc.splitTextToSize(intro, 170);
+  doc.text(splitIntro, 20, 125);
+
+  // PÁGINA 2 - KPIs
+  doc.addPage();
+  doc.setFillColor(246, 248, 252);
+  doc.rect(0, 0, 210, 297, 'F');
+  doc.setTextColor(28, 47, 107);
+  doc.setFontSize(20);
+  doc.setFont(undefined, 'bold');
+  doc.text('KPIs Principales', 20, 25);
+  doc.setDrawColor(90,133,215);
+  doc.setLineWidth(1);
+  doc.line(20, 28, 60, 28);
+
+  const kpis = [
+    { l:'Patrocinios activos', v:'24', d:'+2 vs Q3' },
+    { l:'Inversión total', v:'8,4M€', d:'+6,2%' },
+    { l:'Cumplimiento', v:'78%', d:'≈ objetivo 80%' },
+    { l:'Alertas activas', v:'4', d:'1 nueva' },
+    { l:'ROI promedio', v:'2,3x', d:'+0,4 vs 2025' },
+    { l:'Impresiones', v:'142M', d:'+18,7%' },
+    { l:'Valor de marca', v:'19,3M€', d:'+9,4%' },
+    { l:'Engagement', v:'3,8M', d:'+22%' },
+  ];
+  let ky = 45;
+  kpis.forEach((k, i) => {
+    const col = i % 2;
+    const row = Math.floor(i / 2);
+    const x = 20 + col * 90;
+    const y = ky + row * 32;
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(x, y, 80, 26, 3, 3, 'F');
+    doc.setDrawColor(229, 234, 242);
+    doc.roundedRect(x, y, 80, 26, 3, 3, 'S');
+    doc.setFontSize(8);
+    doc.setTextColor(107, 115, 136);
+    doc.text(k.l.toUpperCase(), x + 4, y + 6);
+    doc.setFontSize(16);
+    doc.setTextColor(28, 47, 107);
+    doc.setFont(undefined, 'bold');
+    doc.text(k.v, x + 4, y + 16);
+    doc.setFontSize(8);
+    doc.setTextColor(34, 176, 125);
+    doc.setFont(undefined, 'normal');
+    doc.text(k.d, x + 4, y + 22);
+  });
+
+  // PÁGINA 2 - Mapa simplificado
+  doc.setTextColor(28, 47, 107);
+  doc.setFontSize(16);
+  doc.setFont(undefined, 'bold');
+  doc.text('Presencia Territorial', 20, 195);
+  doc.line(20, 198, 60, 198);
+
+  doc.setDrawColor(90, 133, 215);
+  doc.setFillColor(232, 240, 255);
+  doc.setLineWidth(0.4);
+  // Iberia simplificada en PDF
+  const px = 30, py = 205;
+  doc.path && doc.path([
+    ['M', px+15, py+10],['L', px+55, py+5],['L', px+90, py+8],
+    ['L', px+115, py+25],['L', px+108, py+55],['L', px+85, py+75],
+    ['L', px+50, py+78],['L', px+25, py+65],['L', px+15, py+40],['Z']
+  ]).fill().stroke();
+  doc.rect(px+5, py+10, 110, 75, 'S');
+
+  // Pins ciudades en PDF
+  doc.setFillColor(28, 47, 107);
+  const pins = [
+    [px+20,  py+20, 'A Coruña'],
+    [px+22,  py+30, 'Vigo'],
+    [px+38,  py+25, 'Lugo'],
+    [px+45,  py+22, 'León'],
+    [px+70,  py+50, 'Madrid'],
+    [px+25,  py+62, 'Lisboa'],
+    [px+108, py+58, 'Palma']
+  ];
+  pins.forEach(p => {
+    doc.circle(p[0], p[1], 1.4, 'F');
+    doc.setFontSize(7);
+    doc.setTextColor(28, 47, 107);
+    doc.text(p[2], p[0]+3, p[1]+1);
+  });
+
+  // PÁGINA 3 - Alertas
+  doc.addPage();
+  doc.setFillColor(246, 248, 252);
+  doc.rect(0, 0, 210, 297, 'F');
+  doc.setTextColor(28, 47, 107);
+  doc.setFontSize(20);
+  doc.setFont(undefined, 'bold');
+  doc.text('Alertas Críticas', 20, 25);
+  doc.line(20, 28, 60, 28);
+
+  let ay = 45;
+  ALERTAS.forEach((a) => {
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(20, ay, 170, 22, 3, 3, 'F');
+    const colors = {
+      danger: [226, 85, 85],
+      warning: [240, 163, 58],
+      info: [90, 133, 215],
+      success: [34, 176, 125]
+    };
+    const c = colors[a.tipo] || colors.info;
+    doc.setFillColor(c[0], c[1], c[2]);
+    doc.rect(20, ay, 3, 22, 'F');
+    doc.setFontSize(11);
+    doc.setTextColor(28, 47, 107);
+    doc.setFont(undefined, 'bold');
+    doc.text(a.titulo, 28, ay + 9);
+    doc.setFontSize(9);
+    doc.setTextColor(107, 115, 136);
+    doc.setFont(undefined, 'normal');
+    doc.text(a.desc, 28, ay + 16);
+    doc.setFontSize(8);
+    doc.text(a.fecha, 165, ay + 9);
+    ay += 28;
+  });
+
+  // Conclusiones IA
+  doc.setTextColor(28, 47, 107);
+  doc.setFontSize(16);
+  doc.setFont(undefined, 'bold');
+  doc.text('Recomendaciones IA', 20, ay + 10);
+  doc.line(20, ay + 13, 70, ay + 13);
+
+  const recos = [
+    '• Priorizar la renovación del CB Río Breogán (vence en 75 días).',
+    '• Resolver incidencia de valla LED en Riazor antes del próximo partido.',
+    '• Aumentar inversión en patrocinios de Náutica: ROI medio 2,8x.',
+    '• Reforzar activaciones digitales: engagement crece 22% YoY.',
+    '• Evaluar oportunidades en mercado portugués post-éxito Belenenses.'
+  ];
+  doc.setFontSize(10);
+  doc.setTextColor(60, 60, 80);
+  doc.setFont(undefined, 'normal');
+  recos.forEach((r, i) => {
+    doc.text(r, 20, ay + 25 + i*7);
+  });
+
+  // Pie
+  doc.setFontSize(7);
+  doc.setTextColor(150, 150, 150);
+  doc.text('© 2026 ABANCA Corporación Bancaria · Documento generado automáticamente', 20, 285);
+
+  doc.save('Informe_IA_ABANCA.pdf');
+  showToast('success', 'Informe IA generado', 'PDF descargado correctamente');
+}
+
+document.getElementById('aiReportBtn').addEventListener('click', generarInformeIA);
+
+/* =====================================================================
+   10. GRÁFICOS CON CHART.JS
+   ===================================================================== */
+const chartColors = {
+  blue:   '#5A85D7',
+  navy:   '#1C2F6B',
+  light:  '#A6C4F0',
+  accent: '#FFB400',
+  green:  '#22B07D',
+  warn:   '#F0A33A',
+  danger: '#E25555',
+  bg:     'rgba(90,133,215,0.18)'
+};
+
+function buildCharts() {
+  Chart.defaults.font.family = 'Outfit';
+  Chart.defaults.font.size = 12;
+  Chart.defaults.color = '#6B7388';
+
+  // Gráfico Deporte Base
+  new Chart(document.getElementById('chartBase'), {
+    type: 'bar',
+    data: {
+      labels: ['Fútbol','Baloncesto','Balonmano','Fútbol sala','Hockey','Náutica','Atletismo','Otros'],
+      datasets: [{
+        label: 'Equipos apoyados',
+        data: [340, 280, 210, 180, 140, 200, 130, 120],
+        backgroundColor: chartColors.blue,
+        borderRadius: 6,
+        barThickness: 24
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { grid: { color: 'rgba(0,0,0,.05)' }, beginAtZero: true },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  // Gráfico Distribución Categorías
+  new Chart(document.getElementById('chartCategoria'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Fútbol (6)','Indoor (8)','Náutica (6)','Base + Comp.','Portugal'],
+      datasets: [{
+        data: [6, 8, 6, 2, 2],
+        backgroundColor: [chartColors.blue, chartColors.navy, chartColors.light, chartColors.accent, '#7BC2E0'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      cutout: '65%',
+      plugins: {
+        legend: { position: 'bottom', labels: { padding: 14, boxWidth: 10, usePointStyle: true } }
+      }
+    }
+  });
+
+  // Gráfico ROI por categoría
+  new Chart(document.getElementById('chartROI'), {
+    type: 'bar',
+    data: {
+      labels: ['Fútbol','Indoor','Náutica','Base+Comp.','Portugal'],
+      datasets: [{
+        label: 'ROI (multiplicador)',
+        data: [2.1, 2.4, 2.8, 3.1, 1.9],
+        backgroundColor: [chartColors.blue, chartColors.navy, chartColors.green, chartColors.accent, chartColors.light],
+        borderRadius: 8,
+        barThickness: 36
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { grid: { color: 'rgba(0,0,0,.05)' }, beginAtZero: true, ticks: { callback: v => v + 'x' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  // Gráfico Trimestral
+  new Chart(document.getElementById('chartTrimestral'), {
+    type: 'line',
+    data: {
+      labels: ['Q1','Q2','Q3','Q4 (est.)'],
+      datasets: [
+        {
+          label: 'Impresiones (M)', data: [28, 34, 39, 41],
+          borderColor: chartColors.blue, backgroundColor: 'rgba(90,133,215,.18)',
+          tension: 0.4, fill: true, borderWidth: 3, pointRadius: 5, pointBackgroundColor: chartColors.blue
+        },
+        {
+          label: 'Engagement (M)', data: [0.7, 0.9, 1.1, 1.1],
+          borderColor: chartColors.accent, backgroundColor: 'rgba(255,180,0,.15)',
+          tension: 0.4, fill: true, borderWidth: 3, pointRadius: 5, pointBackgroundColor: chartColors.accent,
+          yAxisID: 'y1'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom', labels: { padding: 14, boxWidth: 10, usePointStyle: true } } },
+      scales: {
+        y: { type: 'linear', position: 'left', grid: { color: 'rgba(0,0,0,.05)' } },
+        y1: { type: 'linear', position: 'right', grid: { display: false } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+}
+
+/* =====================================================================
+   11. NOTIFICACIONES (toasts)
+   ===================================================================== */
+function showToast(tipo, titulo, msg) {
+  const cont = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast ${tipo}`;
+  const icon = { success:'✓', warning:'⚠', danger:'✕', info:'ℹ' }[tipo] || 'ℹ';
+  t.innerHTML = `
+    <div class="ic">${icon}</div>
+    <div class="body"><strong>${titulo}</strong><span>${msg}</span></div>`;
+  cont.appendChild(t);
+  setTimeout(() => {
+    t.style.animation = 'slideIn .3s ease reverse';
+    setTimeout(() => t.remove(), 300);
+  }, 4000);
+}
+
+// Notificación al hacer clic en la campana
+document.getElementById('notifBtn').addEventListener('click', () => {
+  showToast('info', 'Tienes 3 notificaciones', 'Ver detalle en la sección de alertas');
+});
+
+// Notificaciones simuladas periódicas
+const notifSim = [
+  ['info', 'Nuevo lead', 'Cliente premium interesado en hospitality Copa del Rey'],
+  ['warning', 'Recordatorio', 'Renovación CB Breogán en 75 días'],
+  ['success', 'Activación completada', 'Día del Aficionado · 5.000 asistentes'],
+];
+let notifIdx = 0;
+setTimeout(function loop() {
+  if (notifIdx < notifSim.length) {
+    const [t, ti, m] = notifSim[notifIdx++];
+    showToast(t, ti, m);
+    setTimeout(loop, 12000);
+  }
+}, 8000);
+
+/* =====================================================================
+   12. MODO OSCURO
+   ===================================================================== */
+document.getElementById('darkToggle').addEventListener('click', () => {
+  document.body.classList.toggle('dark');
+  const isDark = document.body.classList.contains('dark');
+  document.getElementById('darkToggle').textContent = isDark ? '☀️' : '🌙';
+  showToast('info', isDark ? 'Modo oscuro' : 'Modo claro', 'Tema cambiado');
+});
+
+/* =====================================================================
+   13. CHATBOX CON RESPUESTAS PREDEFINIDAS
+   ===================================================================== */
+const RESPUESTAS = {
+  'patrocinios activos': 'Actualmente ABANCA tiene 24 patrocinios activos: 6 de fútbol, 8 indoor, 6 náutica, 2 de base/competición y 2 en Portugal.',
+  'roi':                  'El ROI promedio del porfolio es 2,3x. Por categoría: Fútbol 2,1x, Indoor 2,4x, Náutica 2,8x, Base+Comp. 3,1x.',
+  'activaciones':         'Hay 38 activaciones planificadas para 2026, 21 ya completadas, 7 en curso y 10 pendientes.',
+  'breogán':              'El contrato del CB Río Breogán expira en 75 días. Recomendamos iniciar la renovación esta semana.',
+  'breogan':              'El contrato del CB Río Breogán expira en 75 días. Recomendamos iniciar la renovación esta semana.',
+  'renovar':              'Próximas renovaciones: CB Río Breogán (90 días), RC Deportivo (180 días), Pontevedra FC (210 días).',
+  'inversión':            'Inversión total 2026: 8,4M€ repartidos en 24 patrocinios. La mayor partida es Fútbol (3,4M€).',
+  'inversion':            'Inversión total 2026: 8,4M€ repartidos en 24 patrocinios. La mayor partida es Fútbol (3,4M€).',
+  'pantín':               'ABANCA Pantín Classic está activo hasta 2028. Naming title del mundial de surf con 520K€ de inversión.',
+  'pantin':               'ABANCA Pantín Classic está activo hasta 2028. Naming title del mundial de surf con 520K€ de inversión.',
+  'celta':                'RC Celta de Vigo: 1,45M€ invertidos. Patrocinio activo con 82% de cumplimiento. Vence en 2027.',
+  'dépor':                'RC Deportivo: 980K€ invertidos. Estado en RIESGO por incidencia de valla LED. Vence en 2026.',
+  'depor':                'RC Deportivo: 980K€ invertidos. Estado en RIESGO por incidencia de valla LED. Vence en 2026.',
+  'alertas':              'Hay 4 alertas activas: valla RC Deportivo, renovación Breogán, hospitality Celta, contenidos Pantín.',
+  'portugal':             'En Portugal patrocinamos al CF Os Belenenses (fútbol) y Vela Atlántica Lisboa (náutica), expansión iniciada en 2025.',
+  'deporte base':         'Apoyamos a +20.000 deportistas en 1.600 equipos, 34 disciplinas y 181 clubes. Es la columna social del programa.',
+};
+
+function chatbotReply(text) {
+  const lower = text.toLowerCase();
+  for (const k in RESPUESTAS) {
+    if (lower.includes(k)) return RESPUESTAS[k];
+  }
+  if (lower.includes('hola') || lower.includes('buenas')) return '¡Hola! ¿En qué puedo ayudarte con los patrocinios de ABANCA?';
+  if (lower.includes('gracias')) return '¡Para eso estoy! 💙';
+  if (lower.includes('?') || lower.includes('cómo') || lower.includes('como'))
+    return 'Puedo ayudarte con: patrocinios activos, ROI, activaciones, renovaciones, alertas, inversión por categoría y deporte base. ¿Sobre qué quieres saber más?';
+  return 'No tengo información específica sobre eso. Prueba a preguntarme por: patrocinios activos, ROI, activaciones, alertas, Breogán, Pantín, Celta, Dépor o deporte base.';
+}
+
+document.getElementById('chatToggle').addEventListener('click', () => toggleChat());
+function toggleChat() {
+  document.getElementById('chatbox').classList.toggle('show');
+}
+function addChatMsg(text, who) {
+  const m = document.createElement('div');
+  m.className = `chat-msg ${who}`;
+  m.textContent = text;
+  document.getElementById('chatMessages').appendChild(m);
+  const cont = document.getElementById('chatMessages');
+  cont.scrollTop = cont.scrollHeight;
+}
+document.getElementById('chatForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const inp = document.getElementById('chatInput');
+  const v = inp.value.trim();
+  if (!v) return;
+  addChatMsg(v, 'user');
+  inp.value = '';
+  setTimeout(() => addChatMsg(chatbotReply(v), 'bot'), 600);
+});
+document.querySelectorAll('.chat-suggestion').forEach(s => {
+  s.addEventListener('click', () => {
+    addChatMsg(s.textContent, 'user');
+    setTimeout(() => addChatMsg(chatbotReply(s.textContent), 'bot'), 600);
+  });
+});
+
+/* =====================================================================
+   14. TOUR GUIADO INICIAL
+   ===================================================================== */
+const TOUR_STEPS = [
+  { icon:'👋', title:'¡Bienvenido a ABANCA Patrocinios!', text:'Te acompañamos en un breve tour por las funcionalidades principales del portal. Puedes saltarlo en cualquier momento.' },
+  { icon:'📊', title:'Dashboard ejecutivo',       text:'Visualiza KPIs clave, alertas, mapa territorial y compromiso con el deporte base en una sola pantalla.' },
+  { icon:'🤝', title:'Gestión de patrocinios',     text:'Filtra por estado, categoría o nombre. Cada tarjeta muestra inversión, alcance y progreso. Pulsa "Detalle" para ver todo.' },
+  { icon:'⚡', title:'Activaciones cronológicas',  text:'Sigue el estado de cada acción de marca con timeline y barras de progreso.' },
+  { icon:'✨', title:'Informe IA con un clic',     text:'Genera un PDF ejecutivo con KPIs, mapa, alertas y recomendaciones automáticas pulsando "Informe IA".' },
+];
+let tourIdx = 0;
+function startTour() {
+  if (localStorage.getItem('abanca_tour_done')) return;
+  tourIdx = 0;
+  document.getElementById('tourOverlay').classList.add('show');
+  renderTourStep();
+}
+function renderTourStep() {
+  const s = TOUR_STEPS[tourIdx];
+  document.getElementById('tourIcon').textContent = s.icon;
+  document.getElementById('tourTitle').textContent = s.title;
+  document.getElementById('tourText').textContent = s.text;
+  document.getElementById('tourProgress').innerHTML =
+    TOUR_STEPS.map((_, i) => `<span class="${i === tourIdx ? 'active' : ''}"></span>`).join('');
+  document.getElementById('tourNext').textContent = (tourIdx === TOUR_STEPS.length - 1) ? 'Finalizar ✓' : 'Siguiente →';
+}
+document.getElementById('tourNext').addEventListener('click', () => {
+  if (tourIdx < TOUR_STEPS.length - 1) {
+    tourIdx++;
+    renderTourStep();
+  } else endTour();
+});
+function endTour() {
+  document.getElementById('tourOverlay').classList.remove('show');
+  localStorage.setItem('abanca_tour_done', '1');
+}
+
+/* =====================================================================
+   15. INICIALIZACIÓN
+   ===================================================================== */
+document.addEventListener('DOMContentLoaded', () => {
+  renderPatrocinios();
+  setupMap();
+  renderAlertas();
+  renderActivaciones();
+  renderContratos();
+  renderNoticias();
+  renderContactos();
+  renderTickets();
+  renderKanban();
+  buildCharts();
+  setTimeout(startTour, 800);
+  setTimeout(() => showToast('info', 'Sistema actualizado', 'Datos sincronizados con CRM corporativo'), 3000);
+});
+</script>
+</body>
+</html>
